@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FaCog, FaCalendarAlt, FaBell, FaPalette, FaUserCircle, FaMoon, FaSun, FaListUl } from 'react-icons/fa';
 
 const MeView = ({ theme, onToggleTheme, tasks, todos, onImportReminders }) => {

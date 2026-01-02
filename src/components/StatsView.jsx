@@ -173,7 +173,7 @@ const StatsView = () => {
                         strokeWidth="42"
                         mask="url(#tickMask)"
                         strokeDasharray={circumference}
-                        strokeDashoffset={circumference * (25 - displayPercent)}
+                        strokeDashoffset={circumference * (1 - displayPercent)}
                         strokeLinecap="round"
                         style={{ transition: isActive ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.1s ease' }}
                     />
