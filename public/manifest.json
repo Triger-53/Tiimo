@@ -1,0 +1,20 @@
+{
+    "name": "Tiimo Clone",
+    "short_name": "Tiimo",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#FDFDFB",
+    "theme_color": "#6c7cdd",
+    "icons": [
+        {
+            "src": "/icon.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg"
+        },
+        {
+            "src": "/icon.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg"
+        }
+    ]
+}
