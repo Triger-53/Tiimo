@@ -68,6 +68,11 @@ const VoiceModal = ({ isOpen, onClose, onAIActions, currentTasks, currentTodos }
                         },
                         required: ["title"]
                     }
+                },
+                {
+                    name: "clear_all_tasks",
+                    description: "Completely clear or reset the entire schedule and all todos. Use this only when specifically requested by user.",
+                    parameters: { type: "OBJECT", properties: {} }
                 }
             ]
         }
@@ -98,7 +103,7 @@ const VoiceModal = ({ isOpen, onClose, onAIActions, currentTasks, currentTodos }
                     setup: {
                         model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
                         system_instruction: {
-                            parts: [{ text: "Always speak in English. You are a helpful assistant for Tiimo. When creating tasks or todos, ALWAYS suggest a relevant emoji icon and a beautiful soft pastel color. This makes the user's schedule visual and easy to navigate. If a time isn't mentioned, treat it as a to-do by omitting the startTime." }]
+                            parts: [{ text: "Always speak in English. You are a helpful assistant for Tiimo. When creating tasks or todos, ALWAYS suggest a relevant emoji icon and a beautiful soft pastel color. This makes the user's schedule visual and easy to navigate. If a time isn't mentioned, treat it as a to-do by omitting the startTime. \n\nScheduled Tasks Context: " + JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime }))) + "\nAnytime Todos Context: " + JSON.stringify(currentTodos.map(t => ({ id: t.id, title: t.title }))) }]
                         },
                         generation_config: {
                             response_modalities: ["AUDIO"],
@@ -244,6 +249,8 @@ const VoiceModal = ({ isOpen, onClose, onAIActions, currentTasks, currentTodos }
                 } else {
                     result = { result: "error", message: "Task not found" };
                 }
+            } else if (call.name === 'clear_all_tasks') {
+                onAIActions({ actions: [{ type: 'clear_all' }] });
             }
 
             responses.push({

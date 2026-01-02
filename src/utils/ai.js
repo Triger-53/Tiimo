@@ -48,7 +48,7 @@ const tools = [
       },
       {
         name: "delete_task",
-        description: "Delete or remove a task.",
+        description: "Delete or remove a task or to-do. Identify it by its title.",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -56,6 +56,11 @@ const tools = [
           },
           required: ["title"]
         }
+      },
+      {
+        name: "clear_all_tasks",
+        description: "Completely clear or reset the entire schedule and all todos. Use this only when requested by user.",
+        parameters: { type: "OBJECT", properties: {} }
       }
     ]
   }
@@ -63,7 +68,7 @@ const tools = [
 
 // WebSocket-based Multimodal Live implementation
 
-export const generateSchedule = async (prompt, currentTime, currentTasks = []) => {
+export const generateSchedule = async (prompt, currentTime, currentTasks = [], currentTodos = []) => {
   return new Promise((resolve, reject) => {
     try {
       const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
@@ -95,7 +100,7 @@ export const generateSchedule = async (prompt, currentTime, currentTasks = []) =
             setup: {
               model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
               system_instruction: {
-                parts: [{ text: "You are a specialized agent for Tiimo that ONLY uses tools to fulfill requests. DO NOT provide any text or audio response. ONLY call the provided tools. \n\nCRITICAL RULES:\n1. ALWAYS suggest a highly relevant emoji 'icon' for every task.\n2. ALWAYS suggest a beautiful, soft pastel 'color' (hex) for the task background.\n3. Break down tasks into subtasks when it makes sense.\n\nToday: " + currentTime + ". Existing Tasks: " + JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime }))) }]
+                parts: [{ text: "You are a specialized agent for Tiimo that ONLY uses tools to fulfill requests. DO NOT provide any text or audio response. ONLY call the provided tools. \n\nCRITICAL RULES:\n1. ALWAYS suggest a highly relevant emoji 'icon' for every task.\n2. ALWAYS suggest a beautiful, soft pastel 'color' (hex) for the task background.\n3. Break down tasks into subtasks when it makes sense.\n4. To delete 'all', call 'delete_task' for every single item you see in the context OR call 'clear_all_tasks'.\n\nToday: " + currentTime + ".\nScheduled Tasks Context: " + JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime }))) + "\nAnytime Todos Context: " + JSON.stringify(currentTodos.map(t => ({ id: t.id, title: t.title }))) }]
               },
               generation_config: {
                 response_modalities: ["AUDIO"]
@@ -147,12 +152,17 @@ export const generateSchedule = async (prompt, currentTime, currentTasks = []) =
               return { type: 'create', ...call.args };
             }
             if (call.name === 'update_task') {
-              const target = currentTasks.find(t => t.title.toLowerCase().includes(call.args.originalTitle.toLowerCase()));
+              // Search in both tasks and todos
+              const target = [...currentTasks, ...currentTodos].find(t => t.title.toLowerCase().includes(call.args.originalTitle.toLowerCase()));
               return { type: 'update', id: target?.id, updates: call.args.updates };
             }
             if (call.name === 'delete_task') {
-              const target = currentTasks.find(t => t.title.toLowerCase().includes(call.args.title.toLowerCase()));
+              // Search in both tasks and todos
+              const target = [...currentTasks, ...currentTodos].find(t => t.title.toLowerCase().includes(call.args.title.toLowerCase()));
               return { type: 'delete', id: target?.id };
+            }
+            if (call.name === 'clear_all_tasks') {
+              return { type: 'clear_all' };
             }
             return null;
           }).filter(Boolean);

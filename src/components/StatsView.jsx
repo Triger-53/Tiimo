@@ -1,72 +1,288 @@
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FaFire, FaCheckCircle, FaChartLine } from 'react-icons/fa';
+import { FaPlay, FaPause, FaTimes } from 'react-icons/fa';
 
-const StatsView = ({ tasks, todos }) => {
-    const completedTasks = tasks.filter(t => t.done).length; // assuming we track done in tasks (we technically delete them now, might need to change that logic later for real stats)
-    // For now, let's just mock some stats or use the current length
+const StatsView = () => {
+    const [duration, setDuration] = useState(15);
+    const [isActive, setIsActive] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(15 * 60);
+    const [isDragging, setIsDragging] = useState(false);
+    const containerRef = useRef(null);
 
-    const totalFocusTime = tasks.reduce((acc, curr) => acc + (curr.duration || 0), 0);
+    // Sync timeLeft when duration changes (only if not active)
+    useEffect(() => {
+        if (!isActive) {
+            setTimeLeft(duration * 60);
+        }
+    }, [duration, isActive]);
+
+    // Timer logic
+    useEffect(() => {
+        let interval = null;
+        if (isActive && timeLeft > 0) {
+            interval = setInterval(() => {
+                setTimeLeft((prev) => prev - 1);
+            }, 1000);
+        } else if (timeLeft === 0) {
+            setIsActive(false);
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [isActive, timeLeft]);
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    const handleStartStop = () => {
+        setIsActive(!isActive);
+    };
+
+    const handleReset = () => {
+        setIsActive(false);
+        setTimeLeft(duration * 60);
+    };
+
+    const handleDrag = (e) => {
+        if (!isDragging || isActive || !containerRef.current) return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const x = clientX - centerX;
+        const y = clientY - centerY;
+
+        let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
+        if (angle < 0) angle += 360;
+
+        // Map angle 0-360 to 0-60 mins
+        let newDur = Math.round((angle / 360) * 60);
+        if (newDur === 0) newDur = 60;
+
+        setDuration(Math.max(1, Math.min(60, newDur)));
+    };
+
+    const handleDragStart = () => !isActive && setIsDragging(true);
+    const handleDragEnd = () => setIsDragging(false);
+
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handleDrag);
+            window.addEventListener('mouseup', handleDragEnd);
+            window.addEventListener('touchmove', handleDrag);
+            window.addEventListener('touchend', handleDragEnd);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleDrag);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchmove', handleDrag);
+            window.removeEventListener('touchend', handleDragEnd);
+        };
+    }, [isDragging, isActive]);
+
+    // Visual calculations
+    const radius = 125;
+    const circumference = 2 * Math.PI * radius;
+    const currentProgress = isActive ? (timeLeft / (duration * 60)) : 1;
+    const activePercent = (duration / 60);
+    const displayPercent = isActive ? activePercent * currentProgress : activePercent;
+
+    // Rotation for the arrow tip
+    const arrowRotation = (displayPercent * 360) - 90;
 
     return (
-        <div style={{ padding: '0 40px' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px', color: 'var(--text-main)' }}>Your Stats</h2>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '20px 40px',
+            height: '100%',
+            background: '#FDFDFB',
+            userSelect: 'none'
+        }}>
+            <h1 className="serif" style={{ fontSize: '42px', marginTop: '40px', marginBottom: '60px', color: '#1a1a1a', fontWeight: '500' }}>Focus</h1>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{ background: '#ffe4b3', padding: '24px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}
-                >
-                    <div style={{ background: 'rgba(255,255,255,0.4)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FaFire size={24} color="#d97706" />
-                    </div>
-                    <div>
-                        <span style={{ fontSize: '32px', fontWeight: '800', display: 'block', color: '#2d2d2d' }}>3</span>
-                        <span style={{ fontSize: '14px', fontWeight: '600', opacity: 0.7, color: '#2d2d2d' }}>Day Streak</span>
-                    </div>
-                </motion.div>
+            <div
+                ref={containerRef}
+                style={{
+                    position: 'relative',
+                    width: '320px',
+                    height: '320px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: isActive ? 'default' : (isDragging ? 'grabbing' : 'grab')
+                }}
+                onMouseDown={handleDragStart}
+                onTouchStart={handleDragStart}
+            >
+                {/* Background Ring */}
+                <div style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    background: '#EAE6FF',
+                    opacity: 0.8
+                }} />
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    style={{ background: '#b5eadd', padding: '24px', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}
-                >
-                    <div style={{ background: 'rgba(255,255,255,0.4)', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FaCheckCircle size={24} color="#059669" />
+                {/* SVG Progress & Ticks */}
+                <svg width="320" height="320" viewBox="0 0 300 300" style={{ position: 'absolute', transform: 'rotate(-90deg)', overflow: 'visible' }}>
+                    <defs>
+                        <mask id="tickMask">
+                            <rect x="0" y="0" width="300" height="300" fill="white" />
+                            {[...Array(120)].map((_, i) => (
+                                <line
+                                    key={i}
+                                    x1="150" y1="25" x2="150" y2="45"
+                                    stroke="black"
+                                    strokeWidth="1.5"
+                                    transform={`rotate(${i * 3} 150 150)`}
+                                />
+                            ))}
+                        </mask>
+                    </defs>
+
+                    {/* Progress Arc */}
+                    <circle
+                        cx="150"
+                        cy="150"
+                        r={radius}
+                        fill="none"
+                        stroke="#B6A5FF"
+                        strokeWidth="42"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference * (1 - displayPercent)}
+                        strokeLinecap="round"
+                        style={{ transition: isActive ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.1s ease' }}
+                    />
+
+                    {/* Ticks overlay */}
+                    <circle
+                        cx="150"
+                        cy="150"
+                        r={radius}
+                        fill="none"
+                        stroke="rgba(0,0,0,0.1)"
+                        strokeWidth="42"
+                        mask="url(#tickMask)"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference * (1 - displayPercent)}
+                        strokeLinecap="round"
+                        style={{ transition: isActive ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.1s ease' }}
+                    />
+
+                    {/* Leading Edge Arrow (Matching Main Style) */}
+                    {displayPercent > 0 && displayPercent < 0.99 && (
+                        <motion.g
+                            animate={{
+                                rotate: (displayPercent * 360) + 90,
+                                x: 150 + radius * Math.cos(((displayPercent * 360) - 90) * Math.PI / 180),
+                                y: 150 + radius * Math.sin(((displayPercent * 360) - 90) * Math.PI / 180)
+                            }}
+                            transition={{ duration: isActive ? 1 : 0.1, ease: isActive ? "linear" : "easeOut" }}
+                        >
+                            <path
+                                d="M -7 0 L 5 0 M -1 -6 L 5 0 L -1 6"
+                                fill="none"
+                                stroke="#4A3B8C"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ opacity: 0.6 }}
+                            />
+                        </motion.g>
+                    )}
+                </svg>
+
+                {/* Markers & Labels */}
+                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none' }}>
+                    {[15, 30, 45, 60].map(val => {
+                        const angle = (val / 60) * 360 - 90;
+                        const x = 150 + 85 * Math.cos((angle * Math.PI) / 180);
+                        const y = 150 + 85 * Math.sin((angle * Math.PI) / 180);
+                        return (
+                            <span key={val} style={{
+                                position: 'absolute',
+                                left: `${x}px`,
+                                top: `${y}px`,
+                                transform: 'translate(-50%, -50%)',
+                                color: '#A0A0A0',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                            }}>{val}</span>
+                        );
+                    })}
+                </div>
+
+                {/* Center Content */}
+                <div style={{ zIndex: 10, textAlign: 'center', pointerEvents: 'none' }}>
+                    <div className="serif" style={{ fontSize: isActive ? '72px' : '96px', color: '#1a1a1a', lineHeight: 1, fontWeight: '500' }}>
+                        {isActive ? formatTime(timeLeft).split(':')[0] : duration}
                     </div>
-                    <div>
-                        <span style={{ fontSize: '32px', fontWeight: '800', display: 'block', color: '#2d2d2d' }}>{todos.filter(t => t.done).length}</span>
-                        <span style={{ fontSize: '14px', fontWeight: '600', opacity: 0.7, color: '#2d2d2d' }}>Todos Completed</span>
-                    </div>
-                </motion.div>
+                    {isActive ? (
+                        <div style={{ fontSize: '32px', color: '#1a1a1a', opacity: 0.6, fontWeight: '700' }}>
+                            :{formatTime(timeLeft).split(':')[1]}
+                        </div>
+                    ) : (
+                        <div style={{ fontSize: '20px', fontWeight: '800', color: '#1a1a1a', marginTop: '4px', letterSpacing: '1px' }}>MINS</div>
+                    )}
+                </div>
             </div>
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                style={{ marginTop: '20px', background: 'var(--surface-color)', padding: '24px', borderRadius: '24px', border: '1px solid var(--border-color)' }}
-            >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <FaChartLine size={20} color="var(--primary)" />
-                    <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Focus Time</h3>
-                </div>
+            <div style={{ display: 'flex', gap: '20px', marginTop: 'auto', marginBottom: '40px' }}>
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleStartStop}
+                    style={{
+                        padding: '18px 56px',
+                        borderRadius: '100px',
+                        background: isActive ? '#1a1a1a' : '#EAE6E1',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        fontSize: '20px',
+                        fontWeight: '800',
+                        color: isActive ? '#FFF' : '#1a1a1a',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
+                    }}
+                >
+                    {isActive ? <>Pause <FaPause size={16} /></> : <>Start <FaPlay size={16} /></>}
+                </motion.button>
 
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                    <span style={{ fontSize: '48px', fontWeight: '800', color: 'var(--text-main)' }}>{Math.round(totalFocusTime / 60)}</span>
-                    <span style={{ fontSize: '18px', color: 'var(--text-muted)', fontWeight: '500' }}>hours planned today</span>
-                </div>
-
-                <div style={{ marginTop: '16px', height: '8px', background: 'var(--bg-color)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: '60%' }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        style={{ height: '100%', background: 'var(--primary)', borderRadius: '4px' }}
-                    />
-                </div>
-            </motion.div>
+                {isActive && (
+                    <motion.button
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleReset}
+                        style={{
+                            width: '62px',
+                            height: '62px',
+                            borderRadius: '50%',
+                            background: '#F0F0F0',
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: '#1a1a1a'
+                        }}
+                    >
+                        <FaTimes size={20} />
+                    </motion.button>
+                )}
+            </div>
         </div>
     );
 };

@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Newsreader:opsz,wght@6..72,400;600&display=swap');
+
 :root {
-  --bg-color: #f7f5f2;
+  --bg-color: rgb(252, 252, 252);
   --surface-color: #ffffff;
   --surface-hover: rgba(0, 0, 0, 0.02);
   --text-main: #2d2d2d;
@@ -9,7 +11,7 @@
   --accent: #b5eadd;
   --accent-2: #ffe4b3;
   --accent-3: #d4c4fb;
-  --border-color: rgba(0, 0, 0, 0.05);
+  --border-color: rgba(0, 0, 0, 0.06);
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.06);
@@ -20,6 +22,10 @@
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   color-scheme: light dark;
+}
+
+.serif {
+  font-family: 'Newsreader', serif;
 }
 
 body {

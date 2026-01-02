@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { FaCog, FaCalendarAlt, FaBell, FaPalette, FaUserCircle, FaMoon, FaSun } from 'react-icons/fa';
 
-const MeView = ({ theme, onToggleTheme }) => {
+const MeView = ({ theme, onToggleTheme, tasks, todos }) => {
+    const completedCount = todos.filter(t => t.done).length;
     const menuItems = [
         { icon: <FaUserCircle />, label: 'Profile' },
         { icon: <FaCalendarAlt />, label: 'Calendar Integrations' },
@@ -23,6 +24,22 @@ const MeView = ({ theme, onToggleTheme }) => {
                 <div>
                     <h2 style={{ margin: 0, fontSize: '24px', color: 'var(--text-main)' }}>Felix</h2>
                     <p style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>Free Plan</p>
+                </div>
+            </div>
+
+            {/* Stats Summary Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '32px' }}>
+                <div style={{ background: '#ffe4b3', padding: '16px 12px', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '20px', fontWeight: '800', color: '#2d2d2d' }}>3</span>
+                    <span style={{ fontSize: '11px', fontWeight: '600', opacity: 0.7, color: '#2d2d2d' }}>Streak</span>
+                </div>
+                <div style={{ background: '#b5eadd', padding: '16px 12px', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '20px', fontWeight: '800', color: '#2d2d2d' }}>{completedCount}</span>
+                    <span style={{ fontSize: '11px', fontWeight: '600', opacity: 0.7, color: '#2d2d2d' }}>Done</span>
+                </div>
+                <div style={{ background: '#D6CCFF', padding: '16px 12px', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '20px', fontWeight: '800', color: '#2d2d2d' }}>{Math.round(tasks.reduce((acc, curr) => acc + (curr.duration || 0), 0) / 60)}h</span>
+                    <span style={{ fontSize: '11px', fontWeight: '600', opacity: 0.7, color: '#2d2d2d' }}>Focus</span>
                 </div>
             </div>
 

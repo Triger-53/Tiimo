@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import {
   FaPlus, FaMagic, FaMicrophone,
-  FaRegCheckSquare, FaRegCalendarAlt, FaCircleNotch, FaRegSmile
+  FaRegCheckSquare, FaRegCalendarAlt, FaCircleNotch, FaRegSmile, FaTimes
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import TaskCard from './components/TaskCard';
 import AddModal from './components/AddModal';
+import TodayView from './components/TodayView';
 import FocusTimer from './components/FocusTimer';
 import TodoView from './components/TodoView';
 import StatsView from './components/StatsView';
@@ -23,12 +24,13 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [todos, setTodos] = useState([
-    { id: 1, title: 'Buy groceries', done: false, icon: '🛒' },
-    { id: 2, title: 'Call mom', done: false, icon: '📞' },
+    { id: 1, title: 'Buy groceries', done: false, icon: '🛒', priority: 'medium' },
+    { id: 2, title: 'Call mom', done: false, icon: '📞', priority: 'high' },
+    { id: 3, title: 'Wash car', done: false, icon: '🚗', priority: 'low' },
   ]);
   const [activeTask, setActiveTask] = useState(null);
   const [isTimerOpen, setIsTimerOpen] = useState(false);
-  const [currentView, setCurrentView] = useState('my-day');
+  const [currentView, setCurrentView] = useState('today');
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'light';
   });
@@ -39,11 +41,10 @@ const App = () => {
     localStorage.setItem('theme', newTheme);
   };
 
-  // Simple sorting by time (string comparison works for 24h format if padded)
-  const sortedTasks = [...tasks].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const sortedTasks = [...tasks].sort((a, b) => (a.startTime || '99:99').localeCompare(b.startTime || '99:99'));
 
-  const handleAddTodo = (title, icon = '📌') => {
-    setTodos(prev => [...prev, { id: Date.now(), title, done: false, icon }]);
+  const handleAddTodo = (title, icon = '📌', priority = 'none') => {
+    setTodos(prev => [...prev, { id: Date.now(), title, done: false, icon, priority }]);
   };
 
   const handleToggleTodo = (id) => {
@@ -55,20 +56,20 @@ const App = () => {
   };
 
   const handleAIActions = (response) => {
-    // Correctly handle both { actions: [...] } and directly [...]
     const actions = Array.isArray(response) ? response : (response?.actions || []);
 
-    // Handle Tasks Actions
     setTasks(prevTasks => {
       let newTasks = [...prevTasks];
       actions.forEach(action => {
-        // Normalize startTime
-        const startTime = (action.startTime === 'null' || action.startTime === '') ? null : action.startTime;
+        if (action.type === 'clear_all') {
+          newTasks = [];
+          return;
+        }
 
-        if (!startTime && action.type === 'create') return; // Skip non-timed creates here, handled in todos
+        const startTime = (action.startTime === 'null' || action.startTime === '') ? null : action.startTime;
+        if (!startTime && action.type === 'create') return;
 
         if (action.type === 'create') {
-          // eslint-disable-next-line no-unused-vars
           const { type, subtasks, ...taskData } = action;
           const expandedSubtasks = Array.isArray(subtasks)
             ? subtasks.map(t => ({ id: Math.random(), title: t, done: false }))
@@ -89,23 +90,25 @@ const App = () => {
       return newTasks;
     });
 
-    // Handle Todo Actions (Anytime tasks)
     setTodos(prevTodos => {
       let newTodos = [...prevTodos];
       actions.forEach(action => {
-        // Normalize startTime
+        if (action.type === 'clear_all') {
+          newTodos = [];
+          return;
+        }
+
         const startTime = (action.startTime === 'null' || action.startTime === '') ? null : action.startTime;
 
-        // If it's a create action WITHOUT a startTime, it's a Todo/Anytime task
         if (action.type === 'create' && !startTime) {
           newTodos.push({
             id: Date.now() + Math.random(),
             title: action.title,
             done: false,
-            icon: action.icon || '📌'
+            icon: action.icon || '📌',
+            priority: action.priority || 'none'
           });
         }
-        // Todo updates/deletes logic if needed
         if (action.type === 'update' && action.id) {
           newTodos = newTodos.map(t => t.id === action.id ? { ...t, ...action.updates } : t);
         }
@@ -127,148 +130,29 @@ const App = () => {
     setIsTimerOpen(false);
   };
 
-  const getHeaderTitle = () => {
-    switch (currentView) {
-      case 'my-day': return 'My Day';
-      case 'to-do': return 'To-do List';
-      case 'stats': return 'Statistics';
-      case 'me': return 'Me';
-      default: return 'Tiimo';
-    }
-  };
-
   return (
     <div className={`app-container ${theme === 'dark' ? 'dark-theme' : ''}`}>
-      {/* Sidebar Navigation (Bottom bar on mobile) */}
-      <nav className="sidebar">
-        <div className="brand">
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--primary)' }}></div>
-          TiimoClone
-        </div>
-
-        <div className="nav-links">
-          <button
-            onClick={() => setCurrentView('to-do')}
-            className={`nav-item ${currentView === 'to-do' ? 'active' : ''}`}
-          >
-            <FaRegCheckSquare size={22} /><span className="nav-text">To-Do</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('my-day')}
-            className={`nav-item ${currentView === 'my-day' ? 'active' : ''}`}
-          >
-            <FaRegCalendarAlt size={22} /><span className="nav-text">Plan</span>
-          </button>
-
-          <button
-            onClick={() => { }} // Placeholder for Focus
-            className={`nav-item ${currentView === 'focus' ? 'active' : ''}`}
-          >
-            <FaCircleNotch size={22} /><span className="nav-text">Focus</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('me')}
-            className={`nav-item ${currentView === 'me' ? 'active' : ''}`}
-          >
-            <FaRegSmile size={22} /><span className="nav-text">Me</span>
-          </button>
-        </div>
-      </nav>
-
-      {/* Main Content Area */}
-      <main className="main-content">
-        <header className="header">
+      {/* Dynamic Main Header based on View */}
+      {currentView !== 'today' && currentView !== 'to-do' && currentView !== 'stats' && (
+        <header className="header" style={{ padding: '40px 24px 20px' }}>
           <div className="date-display">
-            <h1>{getHeaderTitle()}</h1>
+            <h1 className="serif" style={{ fontSize: '32px' }}>{
+              currentView === 'me' ? 'Profile' : 'Tiimo'
+            }</h1>
             <p>{format(new Date(), 'EEEE, MMMM do')}</p>
           </div>
-          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ddd' }}>
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" style={{ width: '100%', borderRadius: '50%' }} />
-          </div>
         </header>
+      )}
 
-        {currentView === 'my-day' && (
-          <div className="timeline-container">
-            {/* Anytime Section / Top of My Day */}
-            {todos.length > 0 && (
-              <div style={{ marginBottom: '32px', padding: '0 20px' }}>
-                <h3 style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Anytime</h3>
-                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '10px' }}>
-                  {todos.filter(t => !t.done).map(todo => (
-                    <div key={todo.id} style={{
-                      minWidth: '150px',
-                      background: 'white',
-                      padding: '16px',
-                      borderRadius: '16px',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      fontSize: '14px',
-                      fontWeight: '600'
-                    }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', marginBottom: 8 }}></div>
-                      {todo.title}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {sortedTasks.map((task, index) => (
-              <div key={task.id} style={{ display: 'flex', gap: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '50px', paddingTop: '24px' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--text-muted)' }}>{task.startTime}</span>
-                  {index !== sortedTasks.length - 1 && (
-                    <div style={{ flex: 1, width: '2px', background: 'rgba(0,0,0,0.05)', margin: '8px 0' }}></div>
-                  )}
-                </div>
-                <div style={{ flex: 1, paddingBottom: 20 }} onClick={() => handleTaskClick(task)}>
-                  <TaskCard task={task} isActive={index === 0} />
-                </div>
-              </div>
-            ))}
-
-            {tasks.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '60px 0', opacity: 0.5 }}>
-                <h2>No tasks yet</h2>
-                <p>Tap the sparkle button to plan your day!</p>
-              </div>
-            )}
-
-            <div className="fab-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
-              <motion.button
-                className="fab flex-center"
-                onClick={() => setIsModalOpen(true)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  width: 'auto',
-                  height: '50px',
-                  padding: '0 24px',
-                  borderRadius: '25px',
-                  background: '#9D8EC4',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '16px',
-                  fontWeight: '600'
-                }}
-              >
-                <FaPlus size={14} />
-                <span>Add task</span>
-              </motion.button>
-
-              <motion.button
-                className="fab flex-center"
-                onClick={() => setIsVoiceOpen(true)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                style={{ background: '#ff6b6b', width: '50px', height: '50px' }}
-              >
-                <FaMicrophone />
-              </motion.button>
-            </div>
-          </div>
+      {/* Main Content Area */}
+      <main className="main-content" style={{ paddingTop: currentView === 'today' || currentView === 'to-do' ? 0 : '10px' }}>
+        {currentView === 'today' && (
+          <TodayView
+            tasks={tasks}
+            todos={todos}
+            onTaskClick={handleTaskClick}
+            onAddClick={() => setIsModalOpen(true)}
+          />
         )}
 
         {currentView === 'to-do' && (
@@ -277,22 +161,103 @@ const App = () => {
             onAddTodo={handleAddTodo}
             onToggleTodo={handleToggleTodo}
             onDeleteTodo={handleDeleteTodo}
+            onAddClick={() => setIsModalOpen(true)}
           />
         )}
 
-        {currentView === 'stats' && <StatsView tasks={tasks} todos={todos} />}
+        {currentView === 'stats' && <StatsView />}
         {currentView === 'me' && (
           <MeView
             theme={theme}
             onToggleTheme={toggleTheme}
+            tasks={tasks}
+            todos={todos}
           />
         )}
       </main>
+
+      {/* Bottom Floating Actions */}
+      {currentView !== 'me' && (
+        <div className="fab-container">
+          <motion.button
+            className="fab flex-center voice-fab"
+            onClick={() => setIsVoiceOpen(true)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <FaMicrophone size={24} />
+          </motion.button>
+
+          <motion.button
+            className="fab flex-center add-fab"
+            onClick={() => setIsModalOpen(true)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <FaPlus size={24} />
+          </motion.button>
+        </div>
+      )}
+
+      {/* Navigation (Sticky Bottom Navigation) */}
+      <nav className="bottom-nav">
+        <button
+          onClick={() => setCurrentView('to-do')}
+          className={`nav-item ${currentView === 'to-do' ? 'active' : ''}`}
+        >
+          <div className="nav-icon-wrapper">
+            <FaRegCheckSquare size={24} />
+          </div>
+          <span className="nav-text">To-do</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentView('today')}
+          className={`nav-item ${currentView === 'today' ? 'active' : ''}`}
+        >
+          <div className="nav-icon-wrapper">
+            <div style={{ position: 'relative' }}>
+              <FaRegCalendarAlt size={24} />
+              <span style={{
+                position: 'absolute',
+                top: '55%',
+                left: '50%',
+                transform: 'translate(-50%, -40%)',
+                fontSize: '9px',
+                fontWeight: 'bold',
+                color: currentView === 'today' ? 'var(--primary)' : 'var(--text-muted)'
+              }}>{format(new Date(), 'd')}</span>
+            </div>
+          </div>
+          <span className="nav-text">Today</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentView('stats')}
+          className={`nav-item ${currentView === 'stats' ? 'active' : ''}`}
+        >
+          <div className="nav-icon-wrapper">
+            <FaCircleNotch size={24} />
+          </div>
+          <span className="nav-text">Focus</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentView('me')}
+          className={`nav-item ${currentView === 'me' ? 'active' : ''}`}
+        >
+          <div className="nav-icon-wrapper">
+            <FaRegSmile size={24} />
+          </div>
+          <span className="nav-text">Me</span>
+        </button>
+      </nav>
 
       <AddModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         currentTasks={tasks}
+        currentTodos={todos}
         onAIActions={handleAIActions}
       />
 

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { generateSchedule } from '../utils/ai';
 import { FaArrowUp, FaTimes } from 'react-icons/fa';
 
-const AddModal = ({ isOpen, onClose, currentTasks, onAIActions }) => {
+const AddModal = ({ isOpen, onClose, currentTasks, currentTodos, onAIActions }) => {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -16,7 +16,7 @@ const AddModal = ({ isOpen, onClose, currentTasks, onAIActions }) => {
         const timeString = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
 
         try {
-            const actions = await generateSchedule(input, timeString, currentTasks);
+            const actions = await generateSchedule(input, timeString, currentTasks, currentTodos);
             onAIActions(actions);
             setLoading(false);
             setInput('');
