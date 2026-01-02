@@ -61,8 +61,8 @@ const AddModal = ({ isOpen, onClose, currentTasks, onAIActions }) => {
                     >
                         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                                <h2 style={{ margin: 0, fontSize: '24px' }}>What's on your mind?</h2>
-                                <button onClick={onClose} style={{ padding: '8px' }}><FaTimes size={20} /></button>
+                                <h2 style={{ margin: 0, fontSize: '24px', color: 'var(--text-main)' }}>What's on your mind?</h2>
+                                <button onClick={onClose} style={{ padding: '8px', color: 'var(--text-main)' }}><FaTimes size={20} /></button>
                             </div>
 
                             <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
@@ -83,7 +83,8 @@ const AddModal = ({ isOpen, onClose, currentTasks, onAIActions }) => {
                                         fontFamily: 'inherit',
                                         resize: 'none',
                                         outline: 'none',
-                                        boxSizing: 'border-box'
+                                        boxSizing: 'border-box',
+                                        color: 'var(--text-main)'
                                     }}
                                     onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                                     onBlur={(e) => e.target.style.borderColor = 'transparent'}
