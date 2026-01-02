@@ -103,7 +103,7 @@ const VoiceModal = ({ isOpen, onClose, onAIActions, currentTasks, currentTodos }
                     setup: {
                         model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
                         system_instruction: {
-                            parts: [{ text: "Always speak in English. You are a helpful assistant for Tiimo. When creating tasks or todos, ALWAYS suggest a relevant emoji icon and a beautiful soft pastel color. This makes the user's schedule visual and easy to navigate. If a time isn't mentioned, treat it as a to-do by omitting the startTime. \n\nScheduled Tasks Context: " + JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime }))) + "\nAnytime Todos Context: " + JSON.stringify(currentTodos.map(t => ({ id: t.id, title: t.title }))) }]
+                            parts: [{ text: "Always speak in English. You are a helpful assistant for Tiimo. \n\nRules:\n1. ALWAYS suggest a highly relevant emoji 'icon' for every task.\n2. ALWAYS suggest a beautiful, soft pastel 'color' (hex) for the task background.\n3. Break down tasks into subtasks when it makes sense.\n4. To delete 'all', call 'delete_task' for every single item you see in the context OR call 'clear_all_tasks'.\n\nIf a time isn't mentioned, treat it as a to-do by omitting the startTime. \n\nScheduled Tasks Context: " + JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime }))) + "\nAnytime Todos Context: " + JSON.stringify(currentTodos.map(t => ({ id: t.id, title: t.title }))) }]
                         },
                         generation_config: {
                             response_modalities: ["AUDIO"],

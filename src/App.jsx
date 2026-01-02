@@ -132,11 +132,19 @@ const App = () => {
 
   const handleImportReminders = () => {
     const mockReminders = [
-      { id: Date.now() + 1, title: 'Send weekly report', done: false, icon: '📱', priority: 'high' },
-      { id: Date.now() + 2, title: 'Pick up dry cleaning', done: false, icon: '📱', priority: 'medium' },
-      { id: Date.now() + 3, title: 'Book dentist appointment', done: false, icon: '📱', priority: 'low' },
+      { id: Date.now() + 1, title: 'Check emails (from Home)', done: false, icon: '📱', priority: 'medium', source: 'Apple Reminders' },
+      { id: Date.now() + 2, title: 'Buy milk (from Shopping)', done: false, icon: '🛒', priority: 'high', source: 'Apple Reminders' },
+      { id: Date.now() + 3, title: 'Morning Gym (from Personal)', done: false, icon: '💪', startTime: '08:00', duration: 45, color: '#E3F2FD', source: 'Apple Reminders' },
     ];
-    setTodos(prev => [...prev, ...mockReminders]);
+
+    // Separate into tasks (with time) and todos (without)
+    const newTasks = mockReminders.filter(r => r.startTime);
+    const newTodos = mockReminders.filter(r => !r.startTime);
+
+    if (newTasks.length > 0) {
+      setTasks(prev => [...prev, ...newTasks]);
+    }
+    setTodos(prev => [...prev, ...newTodos]);
   };
 
   return (

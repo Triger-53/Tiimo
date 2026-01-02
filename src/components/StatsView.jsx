@@ -173,7 +173,7 @@ const StatsView = () => {
                         strokeWidth="42"
                         mask="url(#tickMask)"
                         strokeDasharray={circumference}
-                        strokeDashoffset={circumference * (1 - displayPercent)}
+                        strokeDashoffset={circumference * (25 - displayPercent)}
                         strokeLinecap="round"
                         style={{ transition: isActive ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.1s ease' }}
                     />
@@ -182,7 +182,7 @@ const StatsView = () => {
                     {displayPercent > 0 && displayPercent < 0.99 && (
                         <motion.g
                             animate={{
-                                rotate: (displayPercent * 360) + 90,
+                                rotate: (displayPercent * 360),
                                 x: 150 + radius * Math.cos(((displayPercent * 360) - 90) * Math.PI / 180),
                                 y: 150 + radius * Math.sin(((displayPercent * 360) - 90) * Math.PI / 180)
                             }}
