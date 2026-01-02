@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaCog, FaCalendarAlt, FaBell, FaPalette, FaUserCircle, FaMoon, FaSun, FaListUl } from 'react-icons/fa';
 
-const MeView = ({ theme, onToggleTheme, tasks, todos }) => {
+const MeView = ({ theme, onToggleTheme, tasks, todos, onImportReminders }) => {
     const completedCount = todos.filter(t => t.done).length;
     const menuItems = [
         { icon: <FaUserCircle />, label: 'Profile' },
@@ -18,6 +18,20 @@ const MeView = ({ theme, onToggleTheme, tasks, todos }) => {
     ];
 
     const [importReminders, setImportReminders] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+
+    const handleToggleReminders = () => {
+        if (!importReminders) {
+            setIsImporting(true);
+            setTimeout(() => {
+                onImportReminders();
+                setImportReminders(true);
+                setIsImporting(false);
+            }, 1500);
+        } else {
+            setImportReminders(false);
+        }
+    };
 
     return (
         <div style={{ padding: '0 40px' }}>
@@ -67,8 +81,8 @@ const MeView = ({ theme, onToggleTheme, tasks, todos }) => {
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <span style={{ color: 'var(--primary)', fontSize: '20px', display: 'flex' }}>{item.icon}</span>
-                            <span style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-main)' }}>{item.label}</span>
+                            <span style={{ color: 'var(--primary)', fontSize: '26px', display: 'flex' }}>{item.icon}</span>
+                            <span style={{ fontSize: '17px', fontWeight: '600', color: 'var(--text-main)' }}>{item.label}</span>
                         </div>
 
                         {item.isTheme ? (
@@ -91,31 +105,34 @@ const MeView = ({ theme, onToggleTheme, tasks, todos }) => {
                                 {theme === 'light' ? <><FaSun /> Light</> : <><FaMoon /> Dark</>}
                             </button>
                         ) : item.isToggle ? (
-                            <div
-                                onClick={() => setImportReminders(!importReminders)}
-                                style={{
-                                    width: '44px',
-                                    height: '24px',
-                                    background: importReminders ? 'var(--primary)' : '#E0E0E0',
-                                    borderRadius: '12px',
-                                    position: 'relative',
-                                    cursor: 'pointer',
-                                    transition: 'background 0.3s ease'
-                                }}
-                            >
-                                <motion.div
-                                    animate={{ x: importReminders ? 22 : 2 }}
-                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {isImporting && <span style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: 'bold' }}>Importing...</span>}
+                                <div
+                                    onClick={handleToggleReminders}
                                     style={{
-                                        width: '20px',
-                                        height: '20px',
-                                        background: 'white',
-                                        borderRadius: '50%',
-                                        position: 'absolute',
-                                        top: '2px',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                        width: '44px',
+                                        height: '24px',
+                                        background: importReminders ? 'var(--primary)' : '#E0E0E0',
+                                        borderRadius: '12px',
+                                        position: 'relative',
+                                        cursor: isImporting ? 'not-allowed' : 'pointer',
+                                        transition: 'background 0.3s ease'
                                     }}
-                                />
+                                >
+                                    <motion.div
+                                        animate={{ x: importReminders ? 22 : 2 }}
+                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                        style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            background: 'white',
+                                            borderRadius: '50%',
+                                            position: 'absolute',
+                                            top: '2px',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                        }}
+                                    />
+                                </div>
                             </div>
                         ) : (
                             <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>&gt;</div>

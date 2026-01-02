@@ -130,6 +130,15 @@ const App = () => {
     setIsTimerOpen(false);
   };
 
+  const handleImportReminders = () => {
+    const mockReminders = [
+      { id: Date.now() + 1, title: 'Send weekly report', done: false, icon: '📱', priority: 'high' },
+      { id: Date.now() + 2, title: 'Pick up dry cleaning', done: false, icon: '📱', priority: 'medium' },
+      { id: Date.now() + 3, title: 'Book dentist appointment', done: false, icon: '📱', priority: 'low' },
+    ];
+    setTodos(prev => [...prev, ...mockReminders]);
+  };
+
   return (
     <div className={`app-container ${theme === 'dark' ? 'dark-theme' : ''}`}>
       {/* Dynamic Main Header based on View */}
@@ -172,6 +181,7 @@ const App = () => {
             onToggleTheme={toggleTheme}
             tasks={tasks}
             todos={todos}
+            onImportReminders={handleImportReminders}
           />
         )}
       </main>
