@@ -113,11 +113,12 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                     style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'var(--bg-color)',
+                        background: '#FDFDFB', // Slightly warmer off-white
                         zIndex: 2000,
                         display: 'flex',
                         flexDirection: 'column',
-                        color: 'var(--text-main)',
+                        // Removed alignItems: center from here to handle scroll container better
+                        color: '#1a1a1a',
                         fontFamily: "'Inter', sans-serif"
                     }}
                 >
@@ -132,40 +133,40 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                         zIndex: 10,
                         boxSizing: 'border-box'
                     }}>
-                        <div style={{ width: 48 }}></div> {/* Spacer for symmetry */}
+                        <div style={{ width: 48 }}></div> {/* Spacer to keep pill centered */}
 
                         {/* Status/focus Pill */}
                         <motion.div
                             whileTap={{ scale: 0.95 }}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '10px',
-                                background: 'var(--surface-color)',
+                                background: '#FFFFFF',
                                 padding: '8px 16px 8px 12px',
                                 borderRadius: '100px',
-                                boxShadow: 'var(--shadow-sm)',
-                                border: '1px solid var(--border-color)',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                                border: '1px solid rgba(0,0,0,0.02)',
                                 cursor: 'pointer'
                             }}
                         >
                             <div style={{
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: 'var(--text-main)'
+                                fontSize: '16px',
+                                fontWeight: '500',
+                                color: '#1a1a1a'
                             }}>Stay Focused</div>
                         </motion.div>
 
-                        <motion.button
+                        < motion.button
                             whileHover={{ scale: 1.1, rotate: 90 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={onClose}
                             style={{
-                                background: 'var(--surface-color)',
-                                border: '1px solid var(--border-color)',
+                                background: '#F0F0F0',
+                                border: 'none',
                                 borderRadius: '50%',
                                 width: '48px', height: '48px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 cursor: 'pointer',
-                                color: 'var(--text-main)'
+                                color: '#333'
                             }}
                         >
                             <IoMdClose size={24} />
@@ -180,8 +181,9 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'flex-start',
-                        overflow: 'hidden',
-                        padding: '0 24px 20px',
+                        overflowX: 'hidden',
+                        overflowY: 'auto',
+                        padding: '0 24px 40px',
                         gap: '2vh',
                         boxSizing: 'border-box'
                     }}>
@@ -191,14 +193,15 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                             <h2 style={{
                                 fontSize: 'clamp(20px, 5vw, 32px)',
                                 margin: '0 0 4px 0',
-                                fontWeight: 800,
+                                fontFamily: "'Playfair Display', serif",
+                                fontWeight: 600,
                                 letterSpacing: '-0.02em',
-                                color: 'var(--text-main)'
+                                color: '#111'
                             }}>{task.title}</h2>
                             <p style={{
-                                fontSize: '12px',
-                                color: 'var(--text-muted)',
-                                fontWeight: 600,
+                                fontSize: '13px',
+                                color: '#A0A0A0',
+                                fontWeight: 500,
                                 margin: 0,
                                 letterSpacing: '0.05em'
                             }}>
@@ -206,23 +209,24 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                             </p>
                         </div>
 
-                        {/* Visual Timer */}
+                        {/* Visual Timer - Proportional to screen but with clear limits */}
                         <div style={{
                             position: 'relative',
-                            height: 'min(30vh, 65vw)',
+                            height: 'min(32vh, 70vw)',
                             aspectRatio: '1 / 1',
-                            minHeight: '180px',
-                            flexShrink: 0,
+                            minHeight: '160px',
+                            flexShrink: 0, // Don't squash the timer
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}>
                             <svg width="100%" height="100%" viewBox="0 0 300 300" style={{ transform: 'rotate(-90deg)', zIndex: 10, overflow: 'visible' }}>
+                                {/* Floating sparkles like in ref image */}
                                 {[...Array(5)].map((_, i) => (
                                     <motion.path
                                         key={i}
                                         d="M 0 0 C 1 0 1.5 0.5 1.5 1.5 C 1.5 0.5 2 0 3 0 C 2 0 1.5 -0.5 1.5 -1.5 C 1.5 -0.5 1 0 0 0"
-                                        fill="var(--primary)"
+                                        fill="#A694F5"
                                         initial={{
                                             x: 150 + 155 * Math.cos(i * 72 * Math.PI / 180),
                                             y: 150 + 155 * Math.sin(i * 72 * Math.PI / 180),
@@ -238,16 +242,16 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                                     cx="150"
                                     cy="150"
                                     r="130"
-                                    stroke="var(--surface-color)"
-                                    strokeWidth="36"
+                                    stroke="#F2F2F5"
+                                    strokeWidth="42"
                                     fill="none"
                                 />
                                 <motion.circle
                                     cx="150"
                                     cy="150"
                                     r="130"
-                                    stroke="var(--primary)"
-                                    strokeWidth="36"
+                                    stroke="#9D8EC4"
+                                    strokeWidth="42"
                                     fill="none"
                                     strokeDasharray={2 * Math.PI * 130}
                                     strokeDashoffset={2 * Math.PI * 130 * (1 - progress)}
@@ -256,56 +260,73 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                                     animate={{ strokeDashoffset: 2 * Math.PI * 130 * (1 - progress) }}
                                     transition={{ duration: 1, ease: 'linear' }}
                                 />
+
+                                {/* Leading Edge Arrow */}
+                                {progress > 0 && progress < 0.99 && (
+                                    <motion.g
+                                        initial={false}
+                                        animate={{
+                                            x: 150 + 130 * Math.cos(progress * 2 * Math.PI),
+                                            y: 150 + 130 * Math.sin(progress * 2 * Math.PI),
+                                            rotate: (progress * 360) + 90
+                                        }}
+                                        transition={{ duration: 1, ease: 'linear' }}
+                                    >
+                                        <path
+                                            d="M -7 0 L 5 0 M -1 -6 L 5 0 L -1 6"
+                                            fill="none"
+                                            stroke="#4A3B8C"
+                                            strokeWidth="2.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            style={{ opacity: 0.6 }}
+                                        />
+                                    </motion.g>
+                                )}
                             </svg>
 
+                            {/* Inner Content - Cream Background */}
                             <div style={{
                                 position: 'absolute',
                                 zIndex: 20,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                backgroundColor: 'var(--surface-color)',
-                                border: '1px solid var(--border-color)',
-                                width: '70%',
+                                backgroundColor: '#F9F1EB',
+                                width: '74%',
                                 aspectRatio: '1 / 1',
                                 borderRadius: '50%',
-                                boxShadow: 'var(--shadow-md)'
+                                boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.02)'
                             }}>
-                                <div style={{ fontSize: 'clamp(60px, 12vh, 90px)' }}>
+                                <div style={{ fontSize: 'min(14vh, 100px)' }}>
                                     {task.icon || '✨'}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Digital Area */}
-                        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+                        {/* Digital Area: Time & Main Controls */}
+                        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                             <div style={{
-                                fontSize: 'clamp(40px, 8vh, 64px)',
-                                fontWeight: 800,
+                                fontSize: 'min(5vh, 60px)',
+                                fontWeight: 700,
                                 fontFamily: "'Inter', sans-serif",
                                 fontVariantNumeric: 'tabular-nums',
                                 letterSpacing: '-0.02em',
-                                color: 'var(--text-main)'
+                                color: '#1b1a1eff'
                             }}>
                                 {formatTime(timeLeft)}
                             </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                                 <motion.button
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={addFiveMinutes}
                                     style={{
-                                        border: '1px solid var(--border-color)',
-                                        background: 'var(--surface-color)',
-                                        fontSize: '14px',
-                                        fontWeight: 700,
-                                        color: 'var(--text-main)',
-                                        cursor: 'pointer',
-                                        height: '48px',
-                                        padding: '0 20px',
-                                        borderRadius: '24px',
-                                        boxShadow: 'var(--shadow-sm)'
+                                        border: 'none', background: 'rgba(0,0,0,0.03)',
+                                        fontSize: '14px', fontWeight: 700, color: '#1a1a1a',
+                                        cursor: 'pointer', height: '44px', padding: '0 16px',
+                                        borderRadius: '22px'
                                     }}
                                 >
                                     +5m
@@ -316,34 +337,31 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                                     whileTap={{ scale: 0.95 }}
                                     onClick={toggleTimer}
                                     style={{
-                                        width: '84px',
-                                        height: '64px',
-                                        background: 'var(--text-main)',
-                                        borderRadius: '32px',
-                                        color: 'var(--bg-color)',
+                                        width: '84px', height: '58px',
+                                        background: '#111',
+                                        borderRadius: '100px',
+                                        color: '#FFF',
                                         border: 'none',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         cursor: 'pointer',
-                                        boxShadow: 'var(--shadow-md)'
+                                        boxShadow: '0 12px 24px rgba(0,0,0,0.15)'
                                     }}
                                 >
-                                    {isActive ? <FaPause size={24} /> : <FaPlay size={24} style={{ marginLeft: '4px' }} />}
+                                    {isActive ? <FaPause size={20} /> : <FaPlay size={20} style={{ marginLeft: '4px' }} />}
                                 </motion.button>
 
-                                <div style={{ width: 44 }}></div> {/* Balance for +5m button */}
+                                <div style={{ width: '44px' }}></div>
                             </div>
                         </div>
 
-                        {/* Checklist Section */}
+                        {/* --- Bottom Checklist Section --- */}
                         <motion.div
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.2 }}
                             style={{
                                 width: '100%',
-                                maxWidth: '500px',
+                                maxWidth: '440px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 flex: 1,
@@ -353,13 +371,16 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                             }}
                         >
                             <div style={{
-                                padding: '10px 0 40px',
+                                padding: '10px 16px 40px',
                                 overflowY: 'auto',
                                 flex: 1,
                                 scrollbarWidth: 'none',
-                                msOverflowStyle: 'none'
+                                msOverflowStyle: 'none',
+                                // Fade effect for top and bottom
+                                WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
+                                maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
                             }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {checklistItems.map((item, index) => (
                                         <motion.div
                                             key={item.id || index}
@@ -368,49 +389,49 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                                             onClick={() => toggleChecklist(item.id)}
                                             style={{
                                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '16px',
-                                                background: item.done ? 'var(--surface-hover)' : 'var(--surface-color)',
+                                                padding: '12px 14px',
+                                                background: item.done ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.8)',
                                                 borderRadius: '20px',
                                                 cursor: 'pointer',
-                                                border: '1px solid var(--border-color)',
-                                                transition: 'all 0.2s ease',
-                                                boxShadow: 'var(--shadow-sm)'
+                                                border: '1px solid rgba(0,0,0,0.03)',
+                                                transition: 'background 0.2s ease',
+                                                backdropFilter: 'blur(12px)'
                                             }}
                                         >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                 <div style={{
-                                                    width: '40px', height: '40px', borderRadius: '12px',
-                                                    background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '20px',
+                                                    width: '34px', height: '34px', borderRadius: '12px',
+                                                    background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '16px',
                                                     flexShrink: 0,
-                                                    border: '1px solid var(--border-color)'
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                                                 }}>
                                                     {item.icon || '📌'}
                                                 </div>
                                                 <span style={{
-                                                    fontSize: '15px',
-                                                    fontWeight: 600,
-                                                    color: item.done ? 'var(--text-muted)' : 'var(--text-main)',
+                                                    fontSize: '14px',
+                                                    fontWeight: 500,
+                                                    color: item.done ? '#AAA' : '#1a1a1a',
                                                     textDecoration: item.done ? 'line-through' : 'none'
                                                 }}>
                                                     {item.title}
                                                 </span>
                                             </div>
                                             <div style={{
-                                                width: '24px', height: '24px', borderRadius: '8px',
-                                                border: item.done ? 'none' : '2px solid var(--border-color)',
-                                                background: item.done ? 'var(--primary)' : 'transparent',
+                                                width: '22px', height: '22px', borderRadius: '7px',
+                                                border: item.done ? 'none' : '2px solid #E0E0E0',
+                                                background: item.done ? '#111' : 'transparent',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 color: 'white',
                                                 flexShrink: 0,
                                                 transition: 'all 0.2s ease'
                                             }}>
-                                                {item.done && <FaCheck size={12} />}
+                                                {item.done && <FaCheck size={10} />}
                                             </div>
                                         </motion.div>
                                     ))}
                                     {checklistItems.length === 0 && (
-                                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px', padding: '40px 0' }}>
+                                        <div style={{ textAlign: 'center', color: '#BBB', fontSize: '13px', padding: '30px 0' }}>
                                             No subtasks for this session
                                         </div>
                                     )}
@@ -419,6 +440,7 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                         </motion.div>
 
                     </div>
+
                 </motion.div>
             )}
         </AnimatePresence>
