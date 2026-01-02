@@ -242,7 +242,7 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                                     cx="150"
                                     cy="150"
                                     r="130"
-                                    stroke="#F2F2F5"
+                                    stroke="#f0f0f07f"
                                     strokeWidth="42"
                                     fill="none"
                                 />
