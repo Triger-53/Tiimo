@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FaHome, FaList, FaRegChartBar, FaUser, FaPlus, FaMagic, FaMicrophone } from 'react-icons/fa';
+import {
+  FaPlus, FaMagic, FaMicrophone,
+  FaRegCheckSquare, FaRegCalendarAlt, FaCircleNotch, FaRegSmile
+} from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import TaskCard from './components/TaskCard';
 import AddModal from './components/AddModal';
@@ -108,8 +111,8 @@ const App = () => {
   };
 
   return (
-    <div className="app-container">
-      {/* Sidebar Navigation */}
+    <div className="app-container dark-theme">
+      {/* Sidebar Navigation (Bottom bar on mobile) */}
       <nav className="sidebar">
         <div className="brand">
           <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--primary)' }}></div>
@@ -118,31 +121,31 @@ const App = () => {
 
         <div className="nav-links">
           <button
-            onClick={() => setCurrentView('my-day')}
-            className={`nav-item ${currentView === 'my-day' ? 'active' : ''}`}
-          >
-            <FaHome size={20} /><span className="nav-text">My Day</span>
-          </button>
-
-          <button
             onClick={() => setCurrentView('to-do')}
             className={`nav-item ${currentView === 'to-do' ? 'active' : ''}`}
           >
-            <FaList size={20} /><span className="nav-text">To-do</span>
+            <FaRegCheckSquare size={22} /><span className="nav-text">To-Do</span>
           </button>
 
           <button
-            onClick={() => setCurrentView('stats')}
-            className={`nav-item ${currentView === 'stats' ? 'active' : ''}`}
+            onClick={() => setCurrentView('my-day')}
+            className={`nav-item ${currentView === 'my-day' ? 'active' : ''}`}
           >
-            <FaRegChartBar size={20} /><span className="nav-text">Stats</span>
+            <FaRegCalendarAlt size={22} /><span className="nav-text">Plan</span>
+          </button>
+
+          <button
+            onClick={() => { }} // Placeholder for Focus
+            className={`nav-item ${currentView === 'focus' ? 'active' : ''}`}
+          >
+            <FaCircleNotch size={22} /><span className="nav-text">Focus</span>
           </button>
 
           <button
             onClick={() => setCurrentView('me')}
             className={`nav-item ${currentView === 'me' ? 'active' : ''}`}
           >
-            <FaUser size={20} /><span className="nav-text">Me</span>
+            <FaRegSmile size={22} /><span className="nav-text">Me</span>
           </button>
         </div>
       </nav>
@@ -205,24 +208,37 @@ const App = () => {
               </div>
             )}
 
-            <div className="fab-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+            <div className="fab-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
+              <motion.button
+                className="fab flex-center"
+                onClick={() => setIsModalOpen(true)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  width: 'auto',
+                  height: '50px',
+                  padding: '0 24px',
+                  borderRadius: '25px',
+                  background: '#9D8EC4',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '16px',
+                  fontWeight: '600'
+                }}
+              >
+                <FaPlus size={14} />
+                <span>Add task</span>
+              </motion.button>
+
               <motion.button
                 className="fab flex-center"
                 onClick={() => setIsVoiceOpen(true)}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                style={{ background: '#ff6b6b' }}
+                style={{ background: '#ff6b6b', width: '50px', height: '50px' }}
               >
                 <FaMicrophone />
-              </motion.button>
-
-              <motion.button
-                className="fab flex-center"
-                onClick={() => setIsModalOpen(true)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <FaMagic />
               </motion.button>
             </div>
           </div>
