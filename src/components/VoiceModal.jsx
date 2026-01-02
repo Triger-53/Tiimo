@@ -98,7 +98,7 @@ const VoiceModal = ({ isOpen, onClose, onAIActions, currentTasks, currentTodos }
                     setup: {
                         model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
                         system_instruction: {
-                            parts: [{ text: "Always speak in English. You are a helpful assistant for Tiimo. When creating tasks or todos, ALWAYS suggest a relevant emoji icon. If a time isn't mentioned, treat it as a to-do by omitting the startTime." }]
+                            parts: [{ text: "Always speak in English. You are a helpful assistant for Tiimo. When creating tasks or todos, ALWAYS suggest a relevant emoji icon and a beautiful soft pastel color. This makes the user's schedule visual and easy to navigate. If a time isn't mentioned, treat it as a to-do by omitting the startTime." }]
                         },
                         generation_config: {
                             response_modalities: ["AUDIO"],

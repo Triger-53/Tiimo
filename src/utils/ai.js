@@ -95,7 +95,7 @@ export const generateSchedule = async (prompt, currentTime, currentTasks = []) =
             setup: {
               model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
               system_instruction: {
-                parts: [{ text: "You are a specialized agent that ONLY uses tools to fulfill requests. DO NOT provide any text or audio response. ONLY call the provided tools. Today: " + currentTime + ". Existing Tasks: " + JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime }))) }]
+                parts: [{ text: "You are a specialized agent for Tiimo that ONLY uses tools to fulfill requests. DO NOT provide any text or audio response. ONLY call the provided tools. \n\nCRITICAL RULES:\n1. ALWAYS suggest a highly relevant emoji 'icon' for every task.\n2. ALWAYS suggest a beautiful, soft pastel 'color' (hex) for the task background.\n3. Break down tasks into subtasks when it makes sense.\n\nToday: " + currentTime + ". Existing Tasks: " + JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime }))) }]
               },
               generation_config: {
                 response_modalities: ["AUDIO"]
