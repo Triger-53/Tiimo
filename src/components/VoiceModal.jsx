@@ -4,7 +4,7 @@ import { FaMicrophone, FaTimes, FaStop } from 'react-icons/fa';
 import { AudioRecorder, AudioPlayer } from '../utils/audioUtils';
 
 const API_KEY = import.meta.env.VITE_GOOGLE_AI_KEY;
-const MODEL = "models/gemini-2.5-flash-native-audio-preview-09-2025"; // User requested specific model
+const MODEL = "models/gemini-2.5-flash-native-audio-preview-09-2025";
 
 const VoiceModal = ({ isOpen, onClose, onAIActions, currentTasks, currentTodos }) => {
     const [status, setStatus] = useState('disconnected'); // disconnected, connecting, connected, error
@@ -98,7 +98,7 @@ const VoiceModal = ({ isOpen, onClose, onAIActions, currentTasks, currentTodos }
                     setup: {
                         model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
                         system_instruction: {
-                            parts: [{ text: "You are a helpful assistant. Always speak in English." }]
+                            parts: [{ text: "Always speak in English. You are a helpful assistant for Tiimo. When creating tasks or todos, ALWAYS suggest a relevant emoji icon. If a time isn't mentioned, treat it as a to-do by omitting the startTime." }]
                         },
                         generation_config: {
                             response_modalities: ["AUDIO"],

@@ -23,8 +23,8 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [todos, setTodos] = useState([
-    { id: 1, title: 'Buy groceries', done: false },
-    { id: 2, title: 'Call mom', done: false },
+    { id: 1, title: 'Buy groceries', done: false, icon: '🛒' },
+    { id: 2, title: 'Call mom', done: false, icon: '📞' },
   ]);
   const [activeTask, setActiveTask] = useState(null);
   const [isTimerOpen, setIsTimerOpen] = useState(false);
@@ -42,8 +42,8 @@ const App = () => {
   // Simple sorting by time (string comparison works for 24h format if padded)
   const sortedTasks = [...tasks].sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  const handleAddTodo = (title) => {
-    setTodos(prev => [...prev, { id: Date.now(), title, done: false }]);
+  const handleAddTodo = (title, icon = '📌') => {
+    setTodos(prev => [...prev, { id: Date.now(), title, done: false, icon }]);
   };
 
   const handleToggleTodo = (id) => {
@@ -55,13 +55,17 @@ const App = () => {
   };
 
   const handleAIActions = (response) => {
-    const actions = response.actions || [];
+    // Correctly handle both { actions: [...] } and directly [...]
+    const actions = Array.isArray(response) ? response : (response?.actions || []);
 
     // Handle Tasks Actions
     setTasks(prevTasks => {
       let newTasks = [...prevTasks];
       actions.forEach(action => {
-        if (!action.startTime && action.type === 'create') return; // Skip non-timed creates here, handled in todos
+        // Normalize startTime
+        const startTime = (action.startTime === 'null' || action.startTime === '') ? null : action.startTime;
+
+        if (!startTime && action.type === 'create') return; // Skip non-timed creates here, handled in todos
 
         if (action.type === 'create') {
           // eslint-disable-next-line no-unused-vars
@@ -69,7 +73,13 @@ const App = () => {
           const expandedSubtasks = Array.isArray(subtasks)
             ? subtasks.map(t => ({ id: Math.random(), title: t, done: false }))
             : [];
-          newTasks.push({ ...taskData, subtasks: expandedSubtasks, id: Date.now() + Math.random() });
+          newTasks.push({
+            ...taskData,
+            startTime: startTime,
+            duration: action.duration || 30,
+            subtasks: expandedSubtasks,
+            id: Date.now() + Math.random()
+          });
         } else if (action.type === 'update') {
           newTasks = newTasks.map(t => t.id === action.id ? { ...t, ...action.updates } : t);
         } else if (action.type === 'delete') {
@@ -83,9 +93,17 @@ const App = () => {
     setTodos(prevTodos => {
       let newTodos = [...prevTodos];
       actions.forEach(action => {
+        // Normalize startTime
+        const startTime = (action.startTime === 'null' || action.startTime === '') ? null : action.startTime;
+
         // If it's a create action WITHOUT a startTime, it's a Todo/Anytime task
-        if (action.type === 'create' && !action.startTime) {
-          newTodos.push({ id: Date.now() + Math.random(), title: action.title, done: false });
+        if (action.type === 'create' && !startTime) {
+          newTodos.push({
+            id: Date.now() + Math.random(),
+            title: action.title,
+            done: false,
+            icon: action.icon || '📌'
+          });
         }
         // Todo updates/deletes logic if needed
         if (action.type === 'update' && action.id) {

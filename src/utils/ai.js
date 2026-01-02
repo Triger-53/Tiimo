@@ -2,64 +2,196 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = import.meta.env.VITE_GOOGLE_AI_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+
+const tools = [
+  {
+    function_declarations: [
+      {
+        name: "create_task",
+        description: "Create a new scheduled task or a to-do item. Use this for 'add', 'plan', 'schedule' requests.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING", description: "The title of the task" },
+            startTime: { type: "STRING", description: "HH:MM format (24h). Omit or null for anytime/todo items." },
+            duration: { type: "NUMBER", description: "Duration in minutes. Default to 30 if unknown." },
+            icon: { type: "STRING", description: "A suggested emoji icon" },
+            color: { type: "STRING", description: "A pastel hex color (e.g. #FFC8C3)" },
+            subtasks: {
+              type: "ARRAY",
+              items: { type: "STRING" },
+              description: "List of subtasks or breakdown steps"
+            }
+          },
+          required: ["title"]
+        }
+      },
+      {
+        name: "update_task",
+        description: "Update an existing task or todo. Use this for 'change', 'move', 'rename'.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            originalTitle: { type: "STRING", description: "The current title of the task to find" },
+            updates: {
+              type: "OBJECT",
+              properties: {
+                title: { type: "STRING" },
+                startTime: { type: "STRING" },
+                duration: { type: "NUMBER" },
+                done: { type: "BOOLEAN" }
+              }
+            }
+          },
+          required: ["originalTitle", "updates"]
+        }
+      },
+      {
+        name: "delete_task",
+        description: "Delete or remove a task.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING", description: "The title of the task to remove" }
+          },
+          required: ["title"]
+        }
+      }
+    ]
+  }
+];
+
+// WebSocket-based Multimodal Live implementation
 
 export const generateSchedule = async (prompt, currentTime, currentTasks = []) => {
-  try {
-    const result = await model.generateContent(`
-      You are an expert AI scheduler for a daily planner app.
-      The current time is ${currentTime}.
-      
-      Current Tasks Context:
-      ${JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime })))}
-
-      User Request: "${prompt}"
-      
-      Based on the request and current context, generate a list of ACTIONS to modify the schedule.
-      Return a JSON object with a single key "actions" which is an array of objects.
-      
-      Supported Action Types:
-      1. "create": Add a new task.
-         Fields: { 
-           type: "create", 
-           title, 
-           startTime (HH:MM), 
-           duration (mins), 
-           icon, 
-           color,
-           subtasks: ["step 1", "step 2"] (optional, breakdown of the task)
-         }
-      
-      2. "update": Modify an existing task.
-         Fields: { type: "update", id, updates: { ...changedFields, subtasks? } }
-      
-      3. "delete": Remove a task.
-         Fields: { type: "delete", id }
-
-      Rules:
-      - Always try to break down complex tasks (like "clean house" or "study") into 3-5 subtasks.
-      - **CRITICAL**: If the user asks to add a "to-do", "reminder", or something with NO specific time, return "startTime": null. This will add it to the Anytime list.
-      - Can user "startTime": null for tasks that don't need a specific slot.
-      - Infer colors (pastel) and emojis.
-      - Return ONLY the JSON.
-    `);
-
-    const response = await result.response;
-    const text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-    console.log("AI Raw Response:", text); // Debug log
-
+  return new Promise((resolve, reject) => {
     try {
-      return JSON.parse(text);
-    } catch (e) {
-      // Sometimes AI wraps in other things or returns invalid JSON
-      console.error("JSON Parse Error:", e);
-      // Try to salvage if it's a simple array wrapped in text
-      const match = text.match(/\[.*\]/s) || text.match(/\{.*\}/s);
-      if (match) return JSON.parse(match[0]);
-      throw e;
+      const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
+      const ws = new WebSocket(url);
+      let actions = [];
+      let isResolved = false;
+
+      const finish = (data) => {
+        if (isResolved) return;
+        isResolved = true;
+        if (ws.readyState === WebSocket.OPEN) ws.close();
+        resolve(data);
+      };
+
+      const fail = (err) => {
+        if (isResolved) return;
+        isResolved = true;
+        if (ws.readyState === WebSocket.OPEN) ws.close();
+        reject(err);
+      };
+
+      let timeout = setTimeout(() => fail(new Error("AI Request timed out")), 12000);
+
+      ws.onopen = () => {
+        console.log("AI WebSocket: Connection Opened");
+        // 1. Setup
+        if (ws.readyState === WebSocket.OPEN) {
+          const setupMessage = {
+            setup: {
+              model: "models/gemini-2.5-flash-native-audio-preview-09-2025",
+              system_instruction: {
+                parts: [{ text: "You are a specialized agent that ONLY uses tools to fulfill requests. DO NOT provide any text or audio response. ONLY call the provided tools. Today: " + currentTime + ". Existing Tasks: " + JSON.stringify(currentTasks.map(t => ({ id: t.id, title: t.title, time: t.startTime }))) }]
+              },
+              generation_config: {
+                response_modalities: ["AUDIO"]
+              },
+              tools: tools
+            }
+          };
+          console.log("AI WebSocket: Sending Setup");
+          ws.send(JSON.stringify(setupMessage));
+        }
+
+        // 2. Send Prompt slightly after setup
+        setTimeout(() => {
+          if (ws.readyState !== WebSocket.OPEN) return;
+          const promptMsg = {
+            client_content: {
+              turns: [{
+                role: "user",
+                parts: [{ text: prompt }]
+              }],
+              turn_complete: true
+            }
+          };
+          console.log("AI WebSocket: Sending Prompt");
+          ws.send(JSON.stringify(promptMsg));
+        }, 150);
+      };
+
+      ws.onmessage = async (event) => {
+        let data;
+        try {
+          if (event.data instanceof Blob) {
+            data = JSON.parse(await event.data.text());
+          } else {
+            data = JSON.parse(event.data);
+          }
+        } catch (e) {
+          console.error("AI WebSocket: Message Parse Error", e);
+          return;
+        }
+
+        console.log("AI WebSocket: Received Message", data);
+
+        // Handle Tool Calls
+        if (data.toolCall?.functionCalls) {
+          console.log("AI WebSocket: Function Calls received:", data.toolCall.functionCalls);
+          actions = data.toolCall.functionCalls.map(call => {
+            if (call.name === 'create_task') {
+              return { type: 'create', ...call.args };
+            }
+            if (call.name === 'update_task') {
+              const target = currentTasks.find(t => t.title.toLowerCase().includes(call.args.originalTitle.toLowerCase()));
+              return { type: 'update', id: target?.id, updates: call.args.updates };
+            }
+            if (call.name === 'delete_task') {
+              const target = currentTasks.find(t => t.title.toLowerCase().includes(call.args.title.toLowerCase()));
+              return { type: 'delete', id: target?.id };
+            }
+            return null;
+          }).filter(Boolean);
+        }
+
+        // Resolve immediately if we have tool calls
+        if (data.toolCall) {
+          console.log("AI WebSocket: Tool Call confirmed, resolving actions.");
+          clearTimeout(timeout);
+          // Small delay to ensure any parallel chunks are processed
+          setTimeout(() => finish({ actions }), 200);
+          return;
+        }
+
+        // Fallback for turn complete or model finished without tools
+        if (data.serverContent?.turnComplete) {
+          console.log("AI WebSocket: Turn Complete received.");
+          clearTimeout(timeout);
+          finish({ actions });
+        }
+
+        if (data.serverContent?.interrupted) {
+          console.warn("AI WebSocket: Interrupted");
+        }
+      };
+
+      ws.onerror = (e) => {
+        console.error("AI WebSocket: Error Event", e);
+        clearTimeout(timeout);
+        fail(new Error("WebSocket connection failed"));
+      };
+
+      ws.onclose = (e) => {
+        console.log("AI WebSocket: Connection Closed", e.code, e.reason);
+        if (!isResolved) finish({ actions: [] });
+      };
+
+    } catch (error) {
+      reject(error);
     }
-  } catch (error) {
-    console.error("AI Error:", error);
-    throw error;
-  }
+  });
 };
