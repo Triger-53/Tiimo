@@ -33,7 +33,7 @@ const TodoView = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
                 letterSpacing: '0.5px'
             }}
         >
-            <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '10px' }}>
+            <span style={{ fontSize: '10px', background: 'var(--surface-hover)', padding: '2px 8px', borderRadius: '10px' }}>
                 {title} ({count})
             </span>
             {expanded ? <FaChevronUp size={8} /> : <FaChevronDown size={8} />}
@@ -54,20 +54,21 @@ const TodoView = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
                 alignItems: 'center',
                 gap: '12px',
                 marginBottom: '8px',
-                border: '1px solid rgba(255,255,255,0.03)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                border: '1px solid var(--border-color)',
+                boxShadow: 'var(--shadow-sm)'
             }}
         >
             <div style={{
                 width: '32px',
                 height: '32px',
                 borderRadius: '12px',
-                background: todo.done ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                background: todo.done ? 'var(--surface-hover)' : 'var(--bg-color)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '14px',
-                flexShrink: 0
+                flexShrink: 0,
+                color: 'var(--text-main)'
             }}>
                 {todo.icon || '📌'}
             </div>
@@ -88,7 +89,7 @@ const TodoView = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    border: todo.done ? 'none' : '2px solid rgba(255,255,255,0.2)',
+                    border: todo.done ? 'none' : '2px solid var(--border-color)',
                     background: todo.done ? 'var(--primary)' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer',
@@ -143,8 +144,8 @@ const TodoView = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo }) => {
                 <div style={{
                     padding: '12px 16px',
                     borderRadius: '16px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'var(--surface-color)',
+                    border: '1px solid var(--border-color)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '12px'

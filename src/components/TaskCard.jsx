@@ -33,8 +33,8 @@ const TaskCard = ({ task, isActive }) => {
             </div>
 
             <div style={{ flex: 1 }}>
-                <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '700', color: '#2d2d2d' }}>{task.title}</h3>
-                <p style={{ margin: 0, opacity: 0.7, fontSize: '14px', fontWeight: '500' }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '700', color: 'var(--text-main)' }}>{task.title}</h3>
+                <p style={{ margin: 0, opacity: 0.7, fontSize: '14px', fontWeight: '500', color: 'var(--text-main)' }}>
                     {task.startTime} • {task.duration} min
                 </p>
             </div>
@@ -45,7 +45,7 @@ const TaskCard = ({ task, isActive }) => {
                     style={{
                         position: 'absolute',
                         top: 0, left: 0, right: 0, bottom: 0,
-                        border: '3px solid #2d2d2d',
+                        border: '3px solid var(--text-main)',
                         borderRadius: '16px',
                         pointerEvents: 'none'
                     }}

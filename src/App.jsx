@@ -29,6 +29,15 @@ const App = () => {
   const [activeTask, setActiveTask] = useState(null);
   const [isTimerOpen, setIsTimerOpen] = useState(false);
   const [currentView, setCurrentView] = useState('my-day');
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'light';
+  });
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
 
   // Simple sorting by time (string comparison works for 24h format if padded)
   const sortedTasks = [...tasks].sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -111,7 +120,7 @@ const App = () => {
   };
 
   return (
-    <div className="app-container dark-theme">
+    <div className={`app-container ${theme === 'dark' ? 'dark-theme' : ''}`}>
       {/* Sidebar Navigation (Bottom bar on mobile) */}
       <nav className="sidebar">
         <div className="brand">
@@ -254,7 +263,12 @@ const App = () => {
         )}
 
         {currentView === 'stats' && <StatsView tasks={tasks} todos={todos} />}
-        {currentView === 'me' && <MeView />}
+        {currentView === 'me' && (
+          <MeView
+            theme={theme}
+            onToggleTheme={toggleTheme}
+          />
+        )}
       </main>
 
       <AddModal
