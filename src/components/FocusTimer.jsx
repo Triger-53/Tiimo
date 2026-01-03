@@ -10,20 +10,13 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
     // Local state for checking off items
     const [checklistItems, setChecklistItems] = useState([]);
 
-    // Mock checklist/vibe if task has no subtasks
-    const defaultChecklist = [
-        { id: 'c1', title: 'Get comfortable', done: true, icon: '🧘' },
-        { id: 'c2', title: 'Focus on one task', done: false, icon: '✍️' },
-        { id: 'c3', title: 'Celebrate progress', done: false, icon: '🎉' }
-    ];
-
     useEffect(() => {
         if (task) {
             setTimeLeft(task.duration * 60);
             setIsActive(false);
 
             // Initialize checklist
-            const items = (task.subtasks && task.subtasks.length > 0) ? task.subtasks : defaultChecklist;
+            const items = (task.subtasks && task.subtasks.length > 0) ? task.subtasks : [];
             // Ensure we clone it to avoid mutating props directly if we were to modify objects
             setChecklistItems(JSON.parse(JSON.stringify(items)));
         }
@@ -431,9 +424,7 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                                         </motion.div>
                                     ))}
                                     {checklistItems.length === 0 && (
-                                        <div style={{ textAlign: 'center', color: '#BBB', fontSize: '13px', padding: '30px 0' }}>
-                                            No subtasks for this session
-                                        </div>
+                                        <div style={{ height: '40px' }} />
                                     )}
                                 </div>
                             </div>
