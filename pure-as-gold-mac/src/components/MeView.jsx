@@ -5,13 +5,24 @@ import { FaCog, FaCalendarAlt, FaBell, FaPalette, FaUserCircle, FaMoon, FaSun, F
 const MeView = ({ theme, onToggleTheme, tasks, todos, onImportReminders }) => {
     const completedCount = todos.filter(t => t.done).length;
 
-    const [importReminders, setImportReminders] = useState(false);
+    const [importReminders, setImportReminders] = useState(() => {
+        return localStorage.getItem('importReminders') === 'true';
+    });
+    useEffect(() => {
+        localStorage.setItem('importReminders', importReminders);
+    }, [importReminders]);
     const [isImporting, setIsImporting] = useState(false);
 
     // State to hold the ACTUAL lists found on the Mac
     const [iosLists, setIosLists] = useState([]);
     // State to hold the IDs of lists selected by the user
-    const [selectedListIds, setSelectedListIds] = useState([]);
+    const [selectedListIds, setSelectedListIds] = useState(() => {
+        const saved = localStorage.getItem('selectedListIds');
+        return saved ? JSON.parse(saved) : [];
+    });
+    useEffect(() => {
+        localStorage.setItem('selectedListIds', JSON.stringify(selectedListIds));
+    }, [selectedListIds]);
     // Cache for all reminders fetched from the system
     const [allRawReminders, setAllRawReminders] = useState([]);
 
