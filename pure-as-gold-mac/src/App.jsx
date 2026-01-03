@@ -16,24 +16,36 @@ import VoiceModal from './components/VoiceModal';
 import './App.css';
 
 const App = () => {
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'Morning Routine', startTime: '08:00', duration: 30, icon: '🌅', color: '#ffc8c3' },
-    { id: 2, title: 'Deep Work', startTime: '09:00', duration: 90, icon: '💻', color: '#9baee0' },
-    { id: 3, title: 'Lunch Break', startTime: '12:30', duration: 45, icon: '🥗', color: '#b5eadd' },
-  ]);
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem('tasks');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
-  const [todos, setTodos] = useState([
-    { id: 1, title: 'Buy groceries', done: false, icon: '🛒', priority: 'medium' },
-    { id: 2, title: 'Call mom', done: false, icon: '📞', priority: 'high' },
-    { id: 3, title: 'Wash car', done: false, icon: '🚗', priority: 'low' },
-  ]);
+  const [todos, setTodos] = useState(() => {
+    const saved = localStorage.getItem('todos');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [activeTask, setActiveTask] = useState(null);
   const [isTimerOpen, setIsTimerOpen] = useState(false);
-  const [currentView, setCurrentView] = useState('today');
+  const [currentView, setCurrentView] = useState(() => {
+    return localStorage.getItem('currentView') || 'today';
+  });
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'light';
   });
+
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem('todos', JSON.stringify(todos));
+  }, [todos]);
+
+  useEffect(() => {
+    localStorage.setItem('currentView', currentView);
+  }, [currentView]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';

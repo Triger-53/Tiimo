@@ -3,11 +3,17 @@ import { motion } from 'framer-motion';
 import { FaPlay, FaPause, FaTimes } from 'react-icons/fa';
 
 const StatsView = () => {
-    const [duration, setDuration] = useState(0);
+    const [duration, setDuration] = useState(() => {
+        return Number(localStorage.getItem('focusDuration')) || 0;
+    });
     const [isActive, setIsActive] = useState(false);
     const [timeLeft, setTimeLeft] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const containerRef = useRef(null);
+
+    useEffect(() => {
+        localStorage.setItem('focusDuration', duration);
+    }, [duration]);
 
     // Sync timeLeft when duration changes (only if not active)
     useEffect(() => {
