@@ -343,7 +343,22 @@ const FocusTimer = ({ task, isOpen, onClose, onComplete }) => {
                                     {isActive ? <FaPause size={20} /> : <FaPlay size={20} style={{ marginLeft: '4px' }} />}
                                 </motion.button>
 
-                                <div style={{ width: '44px' }}></div>
+                                <motion.button
+                                    whileHover={{ scale: 1.1, backgroundColor: 'rgba(76, 175, 80, 0.1)' }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => onComplete(task.id)}
+                                    title="Mark as complete"
+                                    style={{
+                                        border: 'none', background: 'rgba(0,0,0,0.03)',
+                                        color: '#1a1a1a',
+                                        cursor: 'pointer', height: '44px', width: '44px',
+                                        borderRadius: '50%',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    <FaCheck size={18} />
+                                </motion.button>
                             </div>
                         </div>
 
