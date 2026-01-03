@@ -26,7 +26,7 @@ const TaskCard = ({ task, isActive, isSmall }) => {
                 background: task.color || 'rgba(255,255,255,0.4)',
                 width: isSmall ? '36px' : '56px',
                 height: isSmall ? '36px' : '56px',
-                borderRadius: isSmall ? '12px' : '16px',
+                borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'

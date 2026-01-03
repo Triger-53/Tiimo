@@ -1,60 +1,162 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCog, FaCalendarAlt, FaBell, FaPalette, FaUserCircle, FaMoon, FaSun, FaListUl } from 'react-icons/fa';
+// Import the Expo Calendar module (Works for Reminders too)
+import * as Calendar from 'expo-calendar';
+import { Alert, Platform } from 'react-native'; // Native alerts needed for mobile
 
 const MeView = ({ theme, onToggleTheme, tasks, todos, onImportReminders }) => {
     const completedCount = todos.filter(t => t.done).length;
+
+    const [importReminders, setImportReminders] = useState(() => {
+        return localStorage.getItem('importReminders') === 'true';
+    });
+    const [isImporting, setIsImporting] = useState(false);
+
+    // State to hold the ACTUAL lists found on the iPhone
+    const [iosLists, setIosLists] = useState([]);
+    // State to hold the IDs of lists selected by the user
+    const [selectedListIds, setSelectedListIds] = useState(() => {
+        const saved = localStorage.getItem('selectedListIds');
+        return saved ? JSON.parse(saved) : [];
+    });
+    useEffect(() => {
+        localStorage.setItem('importReminders', importReminders);
+    }, [importReminders]);
+
+    useEffect(() => {
+        localStorage.setItem('selectedListIds', JSON.stringify(selectedListIds));
+    }, [selectedListIds]);
+
     const menuItems = [
         { icon: <FaUserCircle />, label: 'Profile' },
         { icon: <FaCalendarAlt />, label: 'Calendar Integrations' },
         { icon: <FaListUl />, label: 'Apple Reminders', isToggle: true },
         { icon: <FaBell />, label: 'Notifications' },
-        {
-            icon: <FaPalette />,
-            label: 'Appearance',
-            isTheme: true
-        },
+        { icon: <FaPalette />, label: 'Appearance', isTheme: true },
         { icon: <FaCog />, label: 'Settings' },
     ];
 
-    const [importReminders, setImportReminders] = useState(false);
-    const [isImporting, setIsImporting] = useState(false);
-    const [selectedLists, setSelectedLists] = useState(['Home']);
+    // --- LOGIC: Fetch Lists from iPhone ---
+    const fetchIosLists = async () => {
+        try {
+            const { status } = await Calendar.requestRemindersPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Permission needed to access Reminders');
+                return false;
+            }
 
-    const reminderLists = ['Home', 'Work', 'Shopping', 'Personal'];
+            // Fetch all calendars that are of type 'REMINDER'
+            const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.REMINDER);
 
-    const handleToggleReminders = () => {
-        if (!importReminders) {
-            setIsImporting(true);
-            setTimeout(() => {
-                onImportReminders();
-                setImportReminders(true);
-                setIsImporting(false);
-            }, 1200);
-        } else {
-            setImportReminders(false);
+            // Format them for our UI
+            const formattedLists = calendars.map(cal => ({
+                id: cal.id,
+                title: cal.title,
+                color: cal.color
+            }));
+
+            setIosLists(formattedLists);
+
+            // Auto-select the default 'Reminders' list if no selection exists
+            if (selectedListIds.length === 0) {
+                const defaultList = formattedLists.find(l => l.title === 'Reminders') || formattedLists[0];
+                if (defaultList) setSelectedListIds([defaultList.id]);
+            }
+            return true;
+        } catch (error) {
+            console.log("Error fetching lists:", error);
+            // Fallback for web/testing so UI doesn't break
+            setIosLists([
+                { id: '1', title: 'Home (Demo)', color: '#FF0000' },
+                { id: '2', title: 'Work (Demo)', color: '#00FF00' }
+            ]);
+            return true;
         }
     };
 
-    const toggleList = (list) => {
-        setSelectedLists(prev =>
-            prev.includes(list) ? prev.filter(l => l !== list) : [...prev, list]
-        );
+    // --- LOGIC: Import actual tasks ---
+    const syncReminders = async () => {
+        if (selectedListIds.length === 0) return;
+
+        // Fetch reminders looking back 24h and forward 48h (adjust as needed)
+        const startDate = new Date();
+        startDate.setHours(0, 0, 0, 0); // Start of today
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 2); // Next 48 hours
+
+        try {
+            const reminders = await Calendar.getRemindersAsync(
+                selectedListIds,
+                null, // status: null = all, or Calendar.ReminderStatus.INCOMPLETE
+                startDate,
+                endDate
+            );
+
+            // Pass the raw data up to your main app to format/save
+            onImportReminders(reminders);
+            console.log(`Imported ${reminders.length} reminders`);
+        } catch (e) {
+            console.log("Sync failed", e);
+        }
     };
+
+    // --- HANDLER: Toggle Switch ---
+    const handleToggleReminders = async () => {
+        if (!importReminders) {
+            setIsImporting(true);
+
+            // 1. Get Permissions & Lists
+            const success = await fetchIosLists();
+
+            if (success) {
+                setImportReminders(true);
+                // 2. Initial Sync
+                await syncReminders();
+            }
+            setIsImporting(false);
+        } else {
+            setImportReminders(false);
+            // Optional: clear imported reminders from app state here
+        }
+    };
+
+    // --- HANDLER: Toggle Specific List ---
+    const toggleList = (listId) => {
+        setSelectedListIds(prev => {
+            const newSelection = prev.includes(listId)
+                ? prev.filter(id => id !== listId)
+                : [...prev, listId];
+
+            // Trigger a re-sync whenever list selection changes
+            // Use setTimeout to allow state to update first, or use useEffect on selectedListIds
+            setTimeout(() => syncReminders(), 100);
+
+            return newSelection;
+        });
+    };
+
+    // Auto-sync when selection changes (Alternative to the setTimeout above)
+    useEffect(() => {
+        if (importReminders && selectedListIds.length > 0) {
+            syncReminders();
+        }
+    }, [selectedListIds]);
+
 
     return (
         <div style={{ padding: '0 40px', paddingBottom: '100px' }}>
+            {/* Header & Stats (Kept exactly as is) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px' }}>
                 <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--surface-color)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
                     <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div>
-                    <h2 style={{ margin: 0, fontSize: '24px', color: 'var(--text-main)' }}>Felix</h2>
+                    <h2 style={{ margin: 0, fontSize: '24px', color: 'var(--text-main)' }}>Pure As Gold</h2>
                     <p style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>Pro Plan</p>
                 </div>
             </div>
 
-            {/* Stats Summary Section */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '32px' }}>
                 <div style={{ background: '#ffe4b3', padding: '16px 12px', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center' }}>
                     <span style={{ fontSize: '20px', fontWeight: '800', color: '#2d2d2d' }}>3</span>
@@ -149,7 +251,7 @@ const MeView = ({ theme, onToggleTheme, tasks, todos, onImportReminders }) => {
                             )}
                         </motion.div>
 
-                        {/* List Selection UI (Visible when toggled on) */}
+                        {/* List Selection UI (Populated by Real Data now) */}
                         <AnimatePresence>
                             {item.label === 'Apple Reminders' && importReminders && (
                                 <motion.div
@@ -168,10 +270,11 @@ const MeView = ({ theme, onToggleTheme, tasks, todos, onImportReminders }) => {
                                     <div style={{ padding: '16px 0', borderTop: '1px solid var(--border-color)' }}>
                                         <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sync these lists</p>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                            {reminderLists.map(list => (
+                                            {/* MAP OVER IOS LISTS INSTEAD OF HARDCODED ARRAY */}
+                                            {iosLists.map(list => (
                                                 <div
-                                                    key={list}
-                                                    onClick={() => toggleList(list)}
+                                                    key={list.id}
+                                                    onClick={() => toggleList(list.id)}
                                                     style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -180,25 +283,28 @@ const MeView = ({ theme, onToggleTheme, tasks, todos, onImportReminders }) => {
                                                         cursor: 'pointer'
                                                     }}
                                                 >
-                                                    <span style={{ fontSize: '15px', color: 'var(--text-main)', fontWeight: selectedLists.includes(list) ? '600' : '400' }}>{list}</span>
+                                                    <span style={{ fontSize: '15px', color: 'var(--text-main)', fontWeight: selectedListIds.includes(list.id) ? '600' : '400' }}>
+                                                        {list.title}
+                                                    </span>
                                                     <div style={{
                                                         width: '20px',
                                                         height: '20px',
                                                         borderRadius: '6px',
-                                                        border: selectedLists.includes(list) ? 'none' : '2px solid var(--border-color)',
-                                                        background: selectedLists.includes(list) ? 'var(--primary)' : 'transparent',
+                                                        border: selectedListIds.includes(list.id) ? 'none' : '2px solid var(--border-color)',
+                                                        background: selectedListIds.includes(list.id) ? 'var(--primary)' : 'transparent',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         transition: 'all 0.2s ease'
                                                     }}>
-                                                        {selectedLists.includes(list) && <div style={{ width: '6px', height: '10px', border: 'solid white', borderWidth: '0 2px 2px 0', transform: 'rotate(45deg)', marginBottom: '2px' }} />}
+                                                        {selectedListIds.includes(list.id) && <div style={{ width: '6px', height: '10px', border: 'solid white', borderWidth: '0 2px 2px 0', transform: 'rotate(45deg)', marginBottom: '2px' }} />}
                                                     </div>
                                                 </div>
                                             ))}
+                                            {iosLists.length === 0 && <div style={{ padding: '10px', color: 'gray', fontSize: '12px' }}>No lists found or permissions denied.</div>}
                                         </div>
                                         <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '10px 0' }}>
-                                            Auto-syncs every few minutes. One-way from Apple to Tiimo.
+                                            Syncing iPhone Reminders to Timeline...
                                         </div>
                                     </div>
                                 </motion.div>

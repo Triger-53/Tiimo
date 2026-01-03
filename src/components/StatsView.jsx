@@ -3,11 +3,17 @@ import { motion } from 'framer-motion';
 import { FaPlay, FaPause, FaTimes } from 'react-icons/fa';
 
 const StatsView = () => {
-    const [duration, setDuration] = useState(15);
+    const [duration, setDuration] = useState(() => {
+        return Number(localStorage.getItem('focusDuration')) || 0;
+    });
     const [isActive, setIsActive] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(15 * 60);
+    const [timeLeft, setTimeLeft] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const containerRef = useRef(null);
+
+    useEffect(() => {
+        localStorage.setItem('focusDuration', duration);
+    }, [duration]);
 
     // Sync timeLeft when duration changes (only if not active)
     useEffect(() => {
@@ -63,9 +69,9 @@ const StatsView = () => {
 
         // Map angle 0-360 to 0-60 mins
         let newDur = Math.round((angle / 360) * 60);
-        if (newDur === 0) newDur = 60;
+        if (newDur >= 60) newDur = 0; // Top point is 0, not 60, for initial state 
 
-        setDuration(Math.max(1, Math.min(60, newDur)));
+        setDuration(Math.max(0, Math.min(60, newDur)));
     };
 
     const handleDragStart = () => !isActive && setIsDragging(true);
@@ -101,12 +107,22 @@ const StatsView = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '20px 40px',
-            height: '100%',
+            padding: '20px 24px',
+            height: '100vh',
             background: '#FDFDFB',
-            userSelect: 'none'
+            userSelect: 'none',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            position: 'relative'
         }}>
-            <h1 className="serif" style={{ fontSize: '42px', marginTop: '40px', marginBottom: '60px', color: '#1a1a1a', fontWeight: '500' }}>Focus</h1>
+            <h1 className="serif" style={{
+                fontSize: '42px',
+                marginTop: 'min(10vh, 60px)',
+                marginBottom: 'min(8vh, 40px)',
+                color: '#1a1a1a',
+                fontWeight: '500',
+                letterSpacing: '-0.02em'
+            }}>Focus</h1>
 
             <div
                 ref={containerRef}
@@ -122,14 +138,14 @@ const StatsView = () => {
                 onMouseDown={handleDragStart}
                 onTouchStart={handleDragStart}
             >
-                {/* Background Ring */}
+                {/* Background Ring - Neutral Gray */}
                 <div style={{
                     position: 'absolute',
                     width: '100%',
                     height: '100%',
                     borderRadius: '50%',
-                    background: '#EAE6FF',
-                    opacity: 0.8
+                    background: '#F0F0F0',
+                    opacity: 0.5
                 }} />
 
                 {/* SVG Progress & Ticks */}
@@ -150,41 +166,45 @@ const StatsView = () => {
                     </defs>
 
                     {/* Progress Arc */}
-                    <circle
-                        cx="150"
-                        cy="150"
-                        r={radius}
-                        fill="none"
-                        stroke="#B6A5FF"
-                        strokeWidth="42"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={circumference * (1 - displayPercent)}
-                        strokeLinecap="round"
-                        style={{ transition: isActive ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.1s ease' }}
-                    />
+                    {displayPercent > 0 && (
+                        <circle
+                            cx="150"
+                            cy="150"
+                            r={radius}
+                            fill="none"
+                            stroke="#B6A5FF"
+                            strokeWidth="42"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={circumference * (1 - displayPercent)}
+                            strokeLinecap="round"
+                            style={{ transition: isActive ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.1s ease' }}
+                        />
+                    )}
 
                     {/* Ticks overlay */}
-                    <circle
-                        cx="150"
-                        cy="150"
-                        r={radius}
-                        fill="none"
-                        stroke="rgba(0,0,0,0.1)"
-                        strokeWidth="42"
-                        mask="url(#tickMask)"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={circumference * (1 - displayPercent)}
-                        strokeLinecap="round"
-                        style={{ transition: isActive ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.1s ease' }}
-                    />
+                    {displayPercent > 0 && (
+                        <circle
+                            cx="150"
+                            cy="150"
+                            r={radius}
+                            fill="none"
+                            stroke="rgba(0,0,0,0.1)"
+                            strokeWidth="42"
+                            mask="url(#tickMask)"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={circumference * (1 - displayPercent)}
+                            strokeLinecap="round"
+                            style={{ transition: isActive ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.1s ease' }}
+                        />
+                    )}
 
                     {/* Leading Edge Arrow (Matching Main Style) */}
-                    {displayPercent > 0 && displayPercent < 0.99 && (
+                    {displayPercent >= 0 && displayPercent < 0.99 && (
                         <motion.g
                             animate={{
-                                rotate: (displayPercent * 360),
-                                x: 150 + radius * Math.cos(((displayPercent * 360) - 90) * Math.PI / 180),
-                                y: 150 + radius * Math.sin(((displayPercent * 360) - 90) * Math.PI / 180)
+                                rotate: (displayPercent * 360) + 90,
+                                x: 150 + radius * Math.cos((displayPercent * 360) * Math.PI / 180),
+                                y: 150 + radius * Math.sin((displayPercent * 360) * Math.PI / 180)
                             }}
                             transition={{ duration: isActive ? 1 : 0.1, ease: isActive ? "linear" : "easeOut" }}
                         >
@@ -202,11 +222,11 @@ const StatsView = () => {
                 </svg>
 
                 {/* Markers & Labels */}
-                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
                     {[15, 30, 45, 60].map(val => {
                         const angle = (val / 60) * 360 - 90;
-                        const x = 150 + 85 * Math.cos((angle * Math.PI) / 180);
-                        const y = 150 + 85 * Math.sin((angle * Math.PI) / 180);
+                        const x = 160 + 85 * Math.cos((angle * Math.PI) / 180);
+                        const y = 160 + 85 * Math.sin((angle * Math.PI) / 180);
                         return (
                             <span key={val} style={{
                                 position: 'absolute',
@@ -222,21 +242,54 @@ const StatsView = () => {
                 </div>
 
                 {/* Center Content */}
-                <div style={{ zIndex: 10, textAlign: 'center', pointerEvents: 'none' }}>
-                    <div className="serif" style={{ fontSize: isActive ? '72px' : '96px', color: '#1a1a1a', lineHeight: 1, fontWeight: '500' }}>
+                <div style={{
+                    zIndex: 10,
+                    textAlign: 'center',
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <div className="serif" style={{
+                        fontSize: isActive ? '72px' : '96px',
+                        color: '#1a1a1a',
+                        lineHeight: 1,
+                        fontWeight: '500',
+                        letterSpacing: '-0.04em'
+                    }}>
                         {isActive ? formatTime(timeLeft).split(':')[0] : duration}
                     </div>
                     {isActive ? (
-                        <div style={{ fontSize: '32px', color: '#1a1a1a', opacity: 0.6, fontWeight: '700' }}>
+                        <div style={{
+                            fontSize: '32px',
+                            color: '#1a1a1a',
+                            opacity: 0.6,
+                            fontWeight: '700',
+                            marginTop: '-4px'
+                        }}>
                             :{formatTime(timeLeft).split(':')[1]}
                         </div>
                     ) : (
-                        <div style={{ fontSize: '20px', fontWeight: '800', color: '#1a1a1a', marginTop: '4px', letterSpacing: '1px' }}>MINS</div>
+                        <div style={{
+                            fontSize: '18px',
+                            fontWeight: '800',
+                            color: '#1a1a1a',
+                            marginTop: '2px',
+                            letterSpacing: '1px',
+                            opacity: 0.4
+                        }}>MINS</div>
                     )}
                 </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '20px', marginTop: 'auto', marginBottom: '40px' }}>
+            <div style={{
+                display: 'flex',
+                gap: '20px',
+                marginTop: 'auto',
+                marginBottom: '110px', // Added extra margin for bottom nav
+                zIndex: 20
+            }}>
                 <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -283,8 +336,8 @@ const StatsView = () => {
                     </motion.button>
                 )}
             </div>
-        </div>
+        </div >
     );
-};
+}
 
 export default StatsView;

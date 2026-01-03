@@ -278,55 +278,84 @@ const VoiceModal = ({ isOpen, onClose, onAIActions, currentTasks, currentTodos }
         setStatus('disconnected');
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(10px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000
-        }}>
-            <div style={{ textAlign: 'center', color: 'white' }}>
-                <button
-                    onClick={onClose}
-                    style={{ position: 'absolute', top: 40, right: 40, background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}
-                >
-                    <FaTimes size={32} />
-                </button>
-
+        <AnimatePresence>
+            {isOpen && (
                 <motion.div
-                    animate={{
-                        scale: isSpeaking ? [1, 1.2, 1] : [1, 1.05, 1],
-                        opacity: isSpeaking ? 1 : 0.8
-                    }}
-                    transition={{ repeat: Infinity, duration: isSpeaking ? 0.8 : 2 }}
+                    initial={{ opacity: 0, x: -50, scale: 0.9 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: -50, scale: 0.9 }}
                     style={{
-                        width: 120, height: 120,
-                        background: status === 'error' ? '#ff6b6b' : 'var(--primary)',
-                        borderRadius: '50%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 40px',
-                        boxShadow: `0 0 60px ${status === 'error' ? 'rgba(255,107,107,0.4)' : 'rgba(108,124,221,0.4)'}`
+                        position: 'fixed',
+                        bottom: '100px',
+                        left: '20px',
+                        width: '300px',
+                        background: 'rgba(255, 255, 255, 0.85)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: '28px',
+                        padding: '16px 20px',
+                        boxShadow: '0 12px 40px rgba(0,0,0,0.08)',
+                        border: '1px solid rgba(255,255,255,0.5)',
+                        zIndex: 2000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px'
                     }}
                 >
-                    <FaMicrophone size={40} color="white" />
-                </motion.div>
+                    <motion.div
+                        animate={{
+                            scale: isSpeaking ? [1, 1.15, 1] : [1, 1.05, 1],
+                            opacity: isSpeaking ? 1 : 0.8
+                        }}
+                        transition={{ repeat: Infinity, duration: isSpeaking ? 1 : 2 }}
+                        style={{
+                            width: 52, height: 52,
+                            background: status === 'error' ? '#FFEFEC' : 'var(--primary)',
+                            borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0,
+                            boxShadow: `0 4px 15px ${status === 'error' ? 'rgba(255,107,107,0.2)' : 'rgba(108,124,221,0.2)'}`
+                        }}
+                    >
+                        <FaMicrophone size={20} color={status === 'error' ? '#FF6B6B' : 'white'} />
+                    </motion.div>
 
-                <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                    {status === 'connecting' && "Connecting..."}
-                    {status === 'connected' && (isSpeaking ? "Speaking..." : "Listening...")}
-                    {status === 'error' && "Connection Failed"}
-                </h2>
-                <p style={{ opacity: 0.6, marginTop: '8px' }}>
-                    {status === 'connected' ? "Try saying: 'Add a coffee break at 4pm'" : "Please check your network"}
-                </p>
-            </div>
-        </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#1a1a1a' }}>
+                            {status === 'connecting' && "Connecting..."}
+                            {status === 'connected' && (isSpeaking ? "AI Speaking..." : "Listening...")}
+                            {status === 'error' && "Mic Error"}
+                        </h4>
+                        <p style={{
+                            margin: '2px 0 0',
+                            fontSize: '12px',
+                            color: '#666',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            {status === 'connected' ? "Say 'Add a task at 5pm'" : "Check connection"}
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        style={{
+                            background: '#F5F5F5',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '32px', height: '32px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: '#666',
+                            flexShrink: 0
+                        }}
+                    >
+                        <FaTimes size={14} />
+                    </button>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 };
 
